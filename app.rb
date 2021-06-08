@@ -20,6 +20,7 @@ class Game
         @players = []
         @dealer = Dealer.new
         @table = Table.new
+        @played_rounds = RoundTracker.new
     end
     
     def add_player player
@@ -44,10 +45,11 @@ class Game
         puts "#{@players[1].name}'s chips (big blind) : #{@players[1].chips.get}"
         puts
 
+        # to be implemented
         # ask remaining players for actions. Same as do_next but without small- and big-blind
 
-        do_next
-        # Ask player 3 if raise, call or fold
+        new_round
+
         # Update the Table.Chip class with the new chips if any. 
     end
 
@@ -88,7 +90,6 @@ class Game
             puts
         end
         # what happens if every player decides to fold?
-
     end
 
     def any_player_raised?
@@ -99,27 +100,29 @@ class Game
         @players.last.actions.length > ACTION_LIMIT
     end
     
-    def do_next
-        puts "New round..."
+    def new_round
+        puts "New round (#{@played_rounds.current})..."
         puts
 
         # ask each player to fold, call or raise
         ask_players_for_action
         
+        
         if any_player_raised?
-
+            
             if action_limit_reached?
                 return puts "ERROR. LIMIT OF ROUNDS (#{ACTION_LIMIT}) HAS BEEN REACHED. Tweak algorithms to be less agressive with raising."
             end
             
-            do_next 
+            @played_rounds.set_next
+            new_round 
         else
             puts
             puts "Move all chips to the pool"
         end
     end
 
-    def new_round
+    def new_game
         # set the big blind player. the player to the "left" of the dealer
         rotate_players
     end
@@ -128,6 +131,37 @@ class Game
     def rotate_players
         @players.rotate!(1)        
     end
+end
+
+class RoundTracker
+    attr_reader :pre_flop, :flop, :turn, :river
+
+    def initialize
+        @pre_flop = true # 0 cards on the table
+        @flop = false # 3 cards on the table
+        @turn = false # 4 cards on the table
+        @river = false # 5 cards on the table
+    end
+
+    def set_next
+        if !@pre_flop
+            @pre_flop = true
+        elsif !@flop
+            @flop = true
+        elsif !@turn
+            @turn = true
+        elsif !@river
+            @river = true
+        end
+    end
+
+    def current
+        return "river" if @river
+        return "turn" if @turn
+        return "flop" if @flop
+        return "pre flop"
+    end
+
 end
 
 class Dealer
@@ -297,9 +331,9 @@ class VirtualPlayer < Player
         # puts "VP: chips_in_pool " + data[:chips_in_pool].to_s
         # puts "VP: number_of_completed_rounds " + data[:number_of_completed_rounds].to_s
 
-        if data[:current_bet] > 25
+        if data[:current_bet] > 50
             action = "call"
-            puts "(#{name} is bailing cause current bet is above 25)"
+            puts "(#{name} is bailing cause current bet is above 50)"
             puts
         else
             action = ["fold", "call", "raise"].shuffle.first
