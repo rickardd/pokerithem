@@ -103,11 +103,14 @@ class Game
     def new_round
         puts "New round (#{@played_rounds.current})..."
         puts
+        
+        deal_to_table
 
-        # ask each player to fold, call or raise
-        ask_players_for_action
-        
-        
+        puts "The Table has #{@table.hand.look_at_cards}"
+        puts 
+
+        ask_players_for_action # ask each player to fold, call or raise
+
         if any_player_raised?
             
             if action_limit_reached?
@@ -119,6 +122,19 @@ class Game
         else
             puts
             puts "Move all chips to the pool"
+        end
+    end
+
+    def deal_to_table
+        if @played_rounds.current == "flop"
+            puts "Dealing 3 cards to the Table..."
+            @dealer.deal @table, 3
+        elsif @played_rounds.current == "turn"
+            puts "Dealing 1 more card to the Table..."
+            @dealer.deal @table, 1
+        elsif @played_rounds.current == "river"
+            puts "Dealing 1 more card to the Table..."
+            @dealer.deal @table, 1
         end
     end
 
@@ -271,6 +287,8 @@ class Player
 end
 
 class Table 
+    attr_reader :hand
+
     def initialize
         @hand = Hand.new
         @chip_pool = ChipSet.new # This is the pool. All players chips moves to here before dealer adds more cards to the table.
