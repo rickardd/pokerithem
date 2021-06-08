@@ -99,11 +99,15 @@ class Game
     def action_limit_reached?
         @players.last.actions.length > ACTION_LIMIT
     end
+
+    def end_of_game?
+        @played_rounds.current == "river"
+    end
     
     def new_round
         puts "New round (#{@played_rounds.current})..."
         puts
-        
+
         deal_to_table
 
         puts "The Table has #{@table.hand.look_at_cards}"
@@ -112,17 +116,20 @@ class Game
         ask_players_for_action # ask each player to fold, call or raise
 
         if any_player_raised?
-            
             if action_limit_reached?
                 return puts "ERROR. LIMIT OF ROUNDS (#{ACTION_LIMIT}) HAS BEEN REACHED. Tweak algorithms to be less agressive with raising."
             end
-            
-            @played_rounds.set_next
-            new_round 
         else
             puts
             puts "Move all chips to the pool"
         end
+
+        if end_of_game?
+            puts "END OF GAME"
+        else 
+            @played_rounds.set_next
+            new_round 
+        end 
     end
 
     def deal_to_table
