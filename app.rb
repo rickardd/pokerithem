@@ -10,6 +10,7 @@ require_relative "validator.rb"
 # 8. Ensure validator handles ais 14 as 1 as well. 
 
 class Game 
+    attr_reader :heighest_bet_total
 
     AUTOMATIC_BIG_BLIND_BET = 20
     AUTOMATIC_SMALL_BLIND_BET = 10
@@ -26,40 +27,65 @@ class Game
     end
 
     def start 
+        puts "Dealing 2 cards to each player..."
+        puts
         # Deal 2 to each player
         deal_2_to_each_player
-        # The big blind player will automatically bet 20 chips.
-        add_chips_to_big_blind
-        puts "Player 1 chips: " + @players[0].chips.get.to_s
+        
+        puts "Player 1 has to 'bet' as small blind..."
         # The small blind player will automatically bet 10 chips
         add_chips_to_small_blind
-        puts "Player 2 chips: " + @players[1].chips.get.to_s
+        puts "#{@players[0].name}'s chips (small blind) : #{@players[0].chips.get}"
+        puts
+
+        puts "Player 2 has to 'bet' as big blind..."
+        # The big blind player will automatically bet 20 chips.
+        add_chips_to_big_blind
+        puts "#{@players[1].name}'s chips (big blind) : #{@players[1].chips.get}"
+        puts
+
+        # ask remaining players for actions. Same as do_next but without small- and big-blind
 
         do_next
         # Ask player 3 if raise, call or fold
         # Update the Table.Chip class with the new chips if any. 
     end
 
+    def heighest_bet_total
+        @players.map { |player| player.chips.get.sum}.max
+    end
+
     def deal_2_to_each_player
         @players.each do |player|
-            puts player.name
             @dealer.deal player, 2
+            puts "#{player.name}'s cards #{player.hand.look_at_cards}"
             puts
         end
     end
-
-    def add_chips_to_big_blind
-        @players[0].chips.add_chip AUTOMATIC_BIG_BLIND_BET
-    end
     
     def add_chips_to_small_blind
-        @players[1].chips.add_chip AUTOMATIC_SMALL_BLIND_BET
+        @players[0].chips.add_chip AUTOMATIC_SMALL_BLIND_BET
     end
 
-    def ask_players_for_action
+    def add_chips_to_big_blind
+        @players[1].chips.add_chip AUTOMATIC_BIG_BLIND_BET
+    end
+
+    def ask_players_for_action 
         @players.each do |player|
-            player.do_action
+            data = {
+                current_bet: heighest_bet_total,
+                oponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
+                cards_on_table: [], #implement
+                chips_total: [], #implement
+                chips_in_pool: 0, #implement
+                number_of_completed_rounds: 0 #implement
+            }.to_h
+
+            player.do_action data
+            # needs to check if this bet is higher than the previous heighest bet if player is raising. 
             puts player.name + " decided to " + player.actions.last + " by " + player.chips.get.last.to_s + " chips"
+            puts
         end
         # what happens if every player decides to fold?
 
@@ -74,15 +100,14 @@ class Game
     end
     
     def do_next
-        puts
-        puts "....dealing"
+        puts "New round..."
         puts
 
         # ask each player to fold, call or raise
         ask_players_for_action
         
         if any_player_raised?
-            puts "next round"
+
             if action_limit_reached?
                 return puts "ERROR. LIMIT OF ROUNDS (#{ACTION_LIMIT}) HAS BEEN REACHED. Tweak algorithms to be less agressive with raising."
             end
@@ -114,13 +139,12 @@ class Dealer
     def deal entity, number
         cards = @deck.take number
         entity.hand.add cards
-        puts "delt " + cards.to_s +  " to " + entity.name
+        # puts "delt " + cards.to_s +  " to " + entity.name
         return cards
     end
 end
 
 class Deck 
-    
     def initialize
         @cards = generate_deck
     end
@@ -142,12 +166,17 @@ class Deck
 end
 
 class ChipSet 
-
     def initialize
         @chips = []
+        @wallet = 50
     end
 
     def add_chip number
+        if @wallet - number <= 0
+            # puts "OUT OF MONEY MATE!"
+            return false
+        end
+        @wallet -= number
         @chips << number
     end
 
@@ -164,12 +193,11 @@ end
 
 class Player 
     #attr_accessor :hand
-    attr_reader :name, :score, :tokens, :hand, :chips, :actions
+    attr_reader :name, :score, :hand, :chips, :actions
     
     def initialize name
         @name = name
         @score = 0
-        @tokens = 0
         @hand = Hand.new
         @chips = ChipSet.new
         @actions = []
@@ -178,28 +206,34 @@ class Player
     def display_all
         puts "Name: #{@name}"
         puts "Score: #{@score}"
-        puts "Tokens: #{@tokens}"
         puts "Cards: #{@hand.look_at_cards}"
     end
 
-    #move to VertualPlayer
-    def do_action
-        # temp code
-        @actions <<  ["fold", "call", "raise"].shuffle.first
+    protected
 
-        if @actions.last == "fold"
-            @chips.add_chip 0
-        end
+    def add_action action, *chip
+        chip = chip.first
+        raise "No action defined" if action.empty?
+        raise "You decided to raise but defined no bet" if actions == "raise" && chip.empty?
+        # implement this
+        #raise "Raise is not heigh enough" if game.heighest_bet_total < @chips.get.sum + chip
 
-        if @actions.last == "call"
-            @chips.add_chip 10 # algorithm decision
-        end
+        # puts "rick" + heighest_bet_total.to_s
+
+        # puts "---------" + game.heighest_bet_total # how to acces this?
+
+        chip = 0 if action == "fold"
+        chip = 10 if action == "call" # update this to be the same as previous maximum bid. (game.heighest_bet_total - this players total)
+
+        @actions <<  action
         
-        if @actions.last == "raise"
-            @chips.add_chip 20 # algorithm decision
+        last_bet = @chips.add_chip chip
+
+        if !last_bet
+            puts "(#{name} IS OUT OF MONEY)"
         end
-        
     end
+    
 end
 
 class Table 
@@ -232,34 +266,58 @@ end
 
 # should this be an interface or extend.. or both?
 class VirtualPlayer < Player
+    # write rspec test to ensure this is correctly implemented. 
     include VirtualPlayerInterface
    
-   # needs access to 
-   # @hand
-   # number of rounds
-   # number of tokens on the table
-   # I'm playe x of y. e.g I'm player 3 of 4 so I know how many after is to play. 
-   
-    # Write Algorithm
-    # def raise_bid 
-        
-    # end
+    # Write an algorith which finally will call the method add_action(action, chip) e.g
+    # add_action("fold") if fold, the value will default to zero anyway
+    # add_action("call") will default to the same chips as the first previous player that did not fold
+    # add_action("raise", x) if fold, the value will default to zero anyway
     
-    # Write Algorithm
-    # def pass 
+    def do_action data
+        # HERE GOES YOUR ALGORITHM. 
         
-    # end
+        # Need to know 
+        # other players actions
+        # other players bets
+        # cards on the table
+        # how many rounds has it been. 
+        # number of chips on the table
+        
+        # Available attributes
+        # @hand
+        # @chips
+        # @actions
+        # I'm playe x of y. e.g I'm player 3 of 4 so I know how many after is to play. 
 
-    def do_action
+        # puts "VP: current_bet " + data[:current_bet].to_s
+        # data[:oponents].each_with_index { |o, i| puts "Oponent: #{i} #{o[:chips].get}" }
+        # puts "VP: cards_on_table " + data[:cards_on_table].to_s
+        # puts "VP: chips_total " + data[:chips_total].to_s
+        # puts "VP: chips_in_pool " + data[:chips_in_pool].to_s
+        # puts "VP: number_of_completed_rounds " + data[:number_of_completed_rounds].to_s
 
+        if data[:current_bet] > 25
+            action = "call"
+            puts "(#{name} is bailing cause current bet is above 25)"
+            puts
+        else
+            action = ["fold", "call", "raise"].shuffle.first
+        end
+
+        if action == "raise"
+            add_action action, 20 # algorithm decision
+            return
+        end
+
+        add_action action
     end
-    
 end
 
 game = Game.new
 
-game.add_player Player.new "Rob"
-game.add_player Player.new "Kriszta"
+game.add_player VirtualPlayer.new "Rob"
+game.add_player VirtualPlayer.new "Kriszta"
 
 game.start
 # game.next
@@ -272,6 +330,4 @@ game.start
 # puts "deck ---"
 # deck = Deck.new
 # puts deck.take 2
-
-
 
