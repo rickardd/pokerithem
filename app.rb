@@ -21,6 +21,7 @@ class Game
         @dealer = Dealer.new
         @table = Table.new
         @played_rounds = RoundTracker.new
+        @validator = Validator.new
     end
     
     def add_player player
@@ -103,6 +104,28 @@ class Game
     def end_of_game?
         @played_rounds.current == "river"
     end
+
+    # player hand plus table hand
+    def full_hand player
+        @table.hand.cards.first + player.hand.cards.first
+    end
+
+    def declare_a_winner
+        # 1. Create a new array of hashes e.g { name: "Rob", ranking_name: "royal_flush", ranking_value: 10, sum: 10 [the total sum of cards] }
+        player_summary_hash = @players.map do |player| 
+            ranking = @validator.validate(full_hand(player))
+            {
+                name: player.name, 
+                ranking_name: ranking[:name], # e.g "royal flush"
+                ranking_value: ranking[:value], # e.g 10
+                sum: ranking[:sum] # total sum of hand
+            }.to_h
+        end
+        # 2. Sort by highest ranking and sum
+        player_summary_hash = player_summary_hash.sort_by { |a| [ a[:ranking_value], a[:sum] ] }.reverse
+        # 3. The first hash is the winner
+        player_summary_hash.first
+    end
     
     def new_round
         puts "New round (#{@played_rounds.current})..."
@@ -125,7 +148,13 @@ class Game
         end
 
         if end_of_game?
+            winner = declare_a_winner
+            puts
             puts "END OF GAME"
+            puts
+            puts "Declaring a winner..."
+            puts
+            puts "The winner is... #{winner[:name]} with #{winner[:ranking_name]} (#{winner[:ranking_value]} points) and a sum of #{winner[:sum]}"
         else 
             @played_rounds.set_next
             new_round 
@@ -303,6 +332,8 @@ class Table
 end
 
 class Hand 
+    attr_reader :cards
+
     def initialize
         @cards = []
     end

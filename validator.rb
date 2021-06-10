@@ -10,6 +10,17 @@ class Validator
     TWO_PAIR_VALUE = 3
     ONE_PAIR_VALUE = 2
     HIGHT_CARDS_VALUE = 1
+
+    ROYAL_FLUSH_NAME = "royal flush"
+    STRAIGHT_FLUSH_NAME = "straight flush"
+    FOUR_OF_A_KING_NAME = "four of a king"
+    FULL_HOUSE_NAME = "full house"
+    FLUSH_NAME = "flush"
+    STRIGHT_NAME = "straight"
+    THREE_OF_A_KIND_NAME = "three of a kind"
+    TWO_PAIR_NAME = "two pair"
+    ONE_PAIR_NAME = "one pair"
+    HIGHT_CARDS_NAME = "hight cards"
     
     class CardSet
         def initialize cards
@@ -31,16 +42,16 @@ class Validator
     
     def validate cards
         @cards = CardSet.new cards
-        # royal_flush
-        # straight_flush
-        # four_of_a_king
-        # full_house
-        # flush
-        # straight
-        # three_of_a_kind
-        # two_pair
-        # one_pair
-        hight_cards
+        return { name: ROYAL_FLUSH_NAME, value: royal_flush, sum: sum }.to_h if royal_flush?
+        return { name: STRAIGHT_FLUSH_NAME, value: straight_flush, sum: sum }.to_h if straight_flush?
+        return { name: FOUR_OF_A_KING_NAME, value: four_of_a_king, sum: sum }.to_h if four_of_a_king?
+        return { name: FULL_HOUSE_NAME, value: full_house, sum: sum }.to_h if full_house?
+        return { name: FLUSH_NAME, value: flush, sum: sum }.to_h if flush?
+        return { name: STRIGHT_NAME, value: straight, sum: sum }.to_h if straight?
+        return { name: THREE_OF_A_KIND_NAME, value: three_of_a_kind, sum: sum }.to_h if three_of_a_kind?
+        return { name: TWO_PAIR_NAME, value: two_pair, sum: sum }.to_h if two_pair?
+        return { name: ONE_PAIR_NAME, value: one_pair, sum: sum }.to_h if one_pair?
+        return { name: HIGHT_CARDS_NAME, value: hight_cards, sum: sum }.to_h if hight_cards?
     end
     
     private
@@ -105,6 +116,10 @@ class Validator
             one_pair?
         )
     end
+
+    def sum
+        @cards.numbers.sum
+    end
     
     
     def royal_flush?
@@ -151,38 +166,38 @@ end
 
 # validator = Validator.new
 
-# Royal flush
-#puts validator.validate([[10, 1], [11, 1], [12, 1], [13, 1], [14, 1]])
-#puts validator.validate([[13, 1], [11, 1], [12, 1], [10, 1], [14, 1]])
+# # Royal flush
+# puts validator.validate([[10, 1], [11, 1], [12, 1], [13, 1], [14, 1]])
+# puts validator.validate([[13, 1], [11, 1], [12, 1], [10, 1], [14, 1]])
 
-# straight_flush
-#puts validator.validate([[3, 1], [4, 1], [5, 1], [6, 1], [7, 1]])
-#puts validator.validate([[7, 2], [4, 2], [5, 2], [6, 2], [3, 2]])
+# # straight_flush
+# puts validator.validate([[3, 1], [4, 1], [5, 1], [6, 1], [7, 1]])
+# puts validator.validate([[7, 2], [4, 2], [5, 2], [6, 2], [3, 2]])
 
-# four_of_a_king
+# # four_of_a_king
 # puts validator.validate([[3, 1], [3, 2], [3, 3], [3, 4], [7, 1]])
 # puts validator.validate([[3, 1], [3, 2], [7, 3], [3, 4], [3, 1]])
 
-# full_house
-#puts validator.validate([[1, 1], [1, 2], [1, 3], [2, 4], [2, 1]])
-#puts validator.validate([[1, 1], [2, 4], [1, 2], [2, 3], [1, 4]])
+# # full_house
+# puts validator.validate([[1, 1], [1, 2], [1, 3], [2, 4], [2, 1]])
+# puts validator.validate([[1, 1], [2, 4], [1, 2], [2, 3], [1, 4]])
 
-# flush
+# # flush
 # puts validator.validate([[1, 1], [2, 1], [1, 1], [2, 1], [1, 1]])
 
-# straight
+# # straight
 # puts validator.validate([[1, 1], [2, 1], [3, 1], [4, 1], [5, 1]])
 
-# three_of_a_kind
+# # three_of_a_kind
 # puts validator.validate([[1, 1], [1, 1], [1, 1], [3, 1], [4, 1]])
 
-# two_pair
+# # two_pair
 # puts validator.validate([[1, 1], [1, 1], [4, 1], [3, 1], [4, 1]])
 
-# one_pair
+# # one_pair
 # puts validator.validate([[2, 1], [10, 1], [3, 1], [5, 1], [2, 1]])
 
-# heigh_cards
+# # heigh_cards
 # puts validator.validate([[2, 2], [3, 1], [4, 1], [10, 1], [11, 1]])
 
 
