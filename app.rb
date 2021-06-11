@@ -1,14 +1,5 @@
 require_relative "validator.rb" 
 
-# 1. - Deck: Make  @cards a 2 dimentional array with correct values (52)
-# 2. - Deck: Create method take_n_cards
-# 3. - Table: create this class which has a hand just like the Player class. 
-# 4. Dealer: new methods deal_2_cards_to_each_player, deal_3_cards_to_table, deal_1_cards_to_table
-# 5. Validator: add sum method
-# 6. Validator: compare hands
-# 7. Game: create a game loop to call next each x second.
-# 8. Ensure validator handles ais 14 as 1 as well. 
-
 class Game 
     attr_reader :heighest_bet_total
 

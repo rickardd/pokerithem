@@ -62,7 +62,10 @@ class Validator
     end
     
     def is_straight?
-        numbers = @cards.numbers.sort
+        numbers = @cards.numbers
+        has_2_and_14 = numbers.select { |number| [2,14].include? number }.length == 2 
+        numbers = numbers + [1] - [14] if has_2_and_14 # Since ais can be both 1 and 14 we'll add 1 and remove 14 to the mix if it has number 2. 
+        numbers.sort!
         numbers == (numbers.first..numbers.first + 4).to_a
     end
     
@@ -120,7 +123,6 @@ class Validator
     def sum
         @cards.numbers.sum
     end
-    
     
     def royal_flush?
         ROYAL_FLUSH_VALUE == royal_flush 
