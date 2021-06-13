@@ -26,7 +26,6 @@ class Game
     def start 
         puts "Dealing 2 cards to each player..."
         puts
-        # Deal 2 to each player
         deal_2_to_each_player
         
         puts "Player 1 has to 'bet' as small blind..."
@@ -45,8 +44,6 @@ class Game
         # ask remaining players for actions. Same as do_next but without small- and big-blind
 
         new_round
-
-        # Update the Table.Chip class with the new chips if any. 
     end
 
     def heighest_bet_total
@@ -136,80 +133,63 @@ class Game
     end
 
     def end_of_game?
-        puts "END OF GAME? #{@played_rounds.current == "end" || number_of_remaining_players < 2}"
         @played_rounds.current == "end" || number_of_remaining_players < 2
     end
 
     # player hand plus table hand
     def full_hand player
-        if @table.hand.cards.first
+        if @table.hand.cards.any?
             return @table.hand.cards.first + player.hand.cards.first            
         end
 
         player.hand.cards.first
     end
 
+    def players_in_current_round
+        @players.reject { |player| player.actions.last == "-" } # excludes players which was out(folded) before this round started. 
+    end
+
+    def get_players_who_did_not_fold players
+        players.reject { |player| player.actions.last == "fold" }
+    end
+    
+    def create_winner_result_hash player
+        ranking = @validator.validate(full_hand(player))
+        {
+            name: player.name, 
+            ranking_name: ranking[:name], # e.g "royal flush"
+            ranking_value: ranking[:value], # e.g 10
+            sum: ranking[:sum] # total sum of hand
+        }.to_h
+    end
+
     def declare_a_winner
-        # players = @players.select { |player| !player.out_of_game }
-        current_round_players = @players.reject { |player| player.actions.last == "-" } # excludes players which was out(folded) before this round started. 
+        current_players = players_in_current_round
+        players_who_did_not_fold = get_players_who_did_not_fold current_players
 
-        # puts "XXXX----- #{@players.map &:actions}"
-        players_who_did_not_fold = current_round_players.reject { |player| player.actions.last == "fold" }
-
-        puts "++++++++++++++++ curent_players = #{current_round_players.length} folded_players = #{players_who_did_not_fold.length}"
-
-        if current_round_players.length == 1
-            player = current_round_players.first
-            ranking = @validator.validate(full_hand(player))
-            return {
-                name: player.name, 
-                ranking_name: ranking[:name], # e.g "royal flush"
-                ranking_value: ranking[:value], # e.g 10
-                sum: ranking[:sum] # total sum of hand
-            }.to_h
+        if current_players.length == 1
+            player = current_players.first
+            create_winner_result_hash player
         elsif players_who_did_not_fold.length == 0
             # If everyone folded, the winner is the player after the one who folded first. In ohter words the second player. 
-            player = current_round_players[1]
-            ranking = @validator.validate(full_hand(player))
-            return {
-                name: player.name, 
-                ranking_name: ranking[:name], # e.g "royal flush"
-                ranking_value: ranking[:value], # e.g 10
-                sum: ranking[:sum] # total sum of hand
-            }.to_h
+            player = current_players[1]
+            create_winner_result_hash player
         elsif players_who_did_not_fold.length == 1
             # If only one player who didn't fold the last round
             player = players_who_did_not_fold.first  
-            ranking = @validator.validate(full_hand(player))
-            return {
-                name: player.name, 
-                ranking_name: ranking[:name], # e.g "royal flush"
-                ranking_value: ranking[:value], # e.g 10
-                sum: ranking[:sum] # total sum of hand
-            }.to_h
+            create_winner_result_hash player
         else
-            # puts "----------------------------ANY PLAYER #{players_who_did_not_fold}"
-
             # 1. Create a new array of hashes e.g { name: "Rob", ranking_name: "royal_flush", ranking_value: 10, sum: 10 [the total sum of cards] }
-            player_summary_hash = players_who_did_not_fold.map do |player| 
-                ranking = @validator.validate(full_hand(player))
-                {
-                    name: player.name, 
-                    ranking_name: ranking[:name], # e.g "royal flush"
-                    ranking_value: ranking[:value], # e.g 10
-                    sum: ranking[:sum] # total sum of hand
-                }.to_h
-                # 2. Sort by highest ranking and sum
-                player_summary_hash = player_summary_hash.sort_by { |a| [ a[:ranking_value], a[:sum] ] }.reverse
-                # 3. The first hash is the winner
-                return player_summary_hash.first
-            end
+            player_summary_hash = players_who_did_not_fold.map { |player| create_winner_result_hash player }
+            # 2. Sort by highest ranking and sum
+            player_summary_hash.sort_by! { |a| [ a[:ranking_value], a[:sum] ] }.reverse
+            # 3. The first hash is the winner
+            return player_summary_hash.first
         end
         
     end
     
     def new_round
-
         if end_of_game?
             puts
             puts "END OF GAME"
@@ -219,17 +199,12 @@ class Game
             puts
             puts "The winner is... #{winner[:name]} with #{winner[:ranking_name]} (#{winner[:ranking_value]} points) and a sum of #{winner[:sum]}"
         else
-
             puts "New round (#{@played_rounds.current})..."
             puts
-
             deal_to_table
-
             puts "The Table has #{@table.hand.look_at_cards}"
             puts 
-
             ask_players_for_action # ask each player to fold, call or raise
-            
             new_round
         end 
     end
@@ -298,11 +273,10 @@ class Dealer
         @deck = Deck.new
     end
     
-    # entity table or player
+    # entity: table or player
     def deal entity, number
         cards = @deck.take number
         entity.hand.add cards
-        # puts "delt " + cards.to_s +  " to " + entity.name
         return cards
     end
 end
@@ -388,11 +362,6 @@ class Player
         raise "You decided to raise but defined no bet" if actions == "raise" && chip.empty?
         # implement this
         #raise "Raise is not heigh enough" if game.heighest_bet_total < @chips.get.sum + chip
-
-        # puts "rick" + heighest_bet_total.to_s
-
-        # puts "---------" + game.heighest_bet_total # how to acces this?
-
         action = "-" if @actions.include? "fold"
 
         chip = -1 if action == "-"
@@ -428,7 +397,6 @@ class Hand
     
     def look_at_cards
         return @cards.to_s
-        #@cards.each { |card| print card } 
     end
     
     def add cards
