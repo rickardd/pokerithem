@@ -1,5 +1,9 @@
 require_relative "validator.rb" 
 
+# 1. if only 2 players. If one folds the other player wins
+# 2. if more than 2 players. we have to ask remianing players for action before moving to flop-round
+# 3. - Don't move to next round until no one is raising. 
+
 class Game 
     attr_reader :heighest_bet_total
 
@@ -67,6 +71,10 @@ class Game
 
     def ask_players_for_action 
         @players.each do |player|
+
+            #Players how has folded will still be asked for the record. This could be a subject for refactoring. 
+            is_out_of_game = player.out_of_game # saves the value before this round
+
             data = {
                 current_bet: heighest_bet_total,
                 oponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
@@ -77,11 +85,46 @@ class Game
             }.to_h
 
             player.do_action data
+            
             # needs to check if this bet is higher than the previous heighest bet if player is raising. 
-            puts player.name + " decided to " + player.actions.last + " by " + player.chips.get.last.to_s + " chips"
+            if is_out_of_game
+                puts player.name + " is out of the game"
+            else
+                puts player.name + " decided to " + player.actions.last + " by " + player.chips.get.last.to_s + " chips"
+            end
             puts
+
+            if player.actions.last == "fold"
+                player.out_of_game = true
+                puts "--  #{player.name} IS OUT OF GAME"
+                puts
+            end
         end
+
+        if any_player_raised? && number_of_remaining_players > 1
+            ask_players_for_action
+        else
+            puts "-- SET NEXT ROUND"
+            puts
+            @played_rounds.set_next
+        end
+
         # what happens if every player decides to fold?
+    end
+
+    def number_of_remaining_players
+        @players.reject { |player| player.out_of_game }.length
+    end
+
+    def last_remaining_player
+        remaining_players = @players.reject { |player| player.out_of_game }
+        
+        if remaining_players.length == 1
+            remaining_players.first
+        else
+            raise "There are #{remaining_players.length} remaining players, expected 1 remaining player"
+        end
+            
     end
 
     def any_player_raised?
@@ -93,62 +136,101 @@ class Game
     end
 
     def end_of_game?
-        @played_rounds.current == "river"
+        puts "END OF GAME? #{@played_rounds.current == "end" || number_of_remaining_players < 2}"
+        @played_rounds.current == "end" || number_of_remaining_players < 2
     end
 
     # player hand plus table hand
     def full_hand player
-        @table.hand.cards.first + player.hand.cards.first
+        if @table.hand.cards.first
+            return @table.hand.cards.first + player.hand.cards.first            
+        end
+
+        player.hand.cards.first
     end
 
     def declare_a_winner
-        # 1. Create a new array of hashes e.g { name: "Rob", ranking_name: "royal_flush", ranking_value: 10, sum: 10 [the total sum of cards] }
-        player_summary_hash = @players.map do |player| 
+        # players = @players.select { |player| !player.out_of_game }
+        current_round_players = @players.reject { |player| player.actions.last == "-" } # excludes players which was out(folded) before this round started. 
+
+        # puts "XXXX----- #{@players.map &:actions}"
+        players_who_did_not_fold = current_round_players.reject { |player| player.actions.last == "fold" }
+
+        puts "++++++++++++++++ curent_players = #{current_round_players.length} folded_players = #{players_who_did_not_fold.length}"
+
+        if current_round_players.length == 1
+            player = current_round_players.first
             ranking = @validator.validate(full_hand(player))
-            {
+            return {
                 name: player.name, 
                 ranking_name: ranking[:name], # e.g "royal flush"
                 ranking_value: ranking[:value], # e.g 10
                 sum: ranking[:sum] # total sum of hand
             }.to_h
+        elsif players_who_did_not_fold.length == 0
+            # If everyone folded, the winner is the player after the one who folded first. In ohter words the second player. 
+            player = current_round_players[1]
+            ranking = @validator.validate(full_hand(player))
+            return {
+                name: player.name, 
+                ranking_name: ranking[:name], # e.g "royal flush"
+                ranking_value: ranking[:value], # e.g 10
+                sum: ranking[:sum] # total sum of hand
+            }.to_h
+        elsif players_who_did_not_fold.length == 1
+            # If only one player who didn't fold the last round
+            player = players_who_did_not_fold.first  
+            ranking = @validator.validate(full_hand(player))
+            return {
+                name: player.name, 
+                ranking_name: ranking[:name], # e.g "royal flush"
+                ranking_value: ranking[:value], # e.g 10
+                sum: ranking[:sum] # total sum of hand
+            }.to_h
+        else
+            # puts "----------------------------ANY PLAYER #{players_who_did_not_fold}"
+
+            # 1. Create a new array of hashes e.g { name: "Rob", ranking_name: "royal_flush", ranking_value: 10, sum: 10 [the total sum of cards] }
+            player_summary_hash = players_who_did_not_fold.map do |player| 
+                ranking = @validator.validate(full_hand(player))
+                {
+                    name: player.name, 
+                    ranking_name: ranking[:name], # e.g "royal flush"
+                    ranking_value: ranking[:value], # e.g 10
+                    sum: ranking[:sum] # total sum of hand
+                }.to_h
+                # 2. Sort by highest ranking and sum
+                player_summary_hash = player_summary_hash.sort_by { |a| [ a[:ranking_value], a[:sum] ] }.reverse
+                # 3. The first hash is the winner
+                return player_summary_hash.first
+            end
         end
-        # 2. Sort by highest ranking and sum
-        player_summary_hash = player_summary_hash.sort_by { |a| [ a[:ranking_value], a[:sum] ] }.reverse
-        # 3. The first hash is the winner
-        player_summary_hash.first
+        
     end
     
     def new_round
-        puts "New round (#{@played_rounds.current})..."
-        puts
-
-        deal_to_table
-
-        puts "The Table has #{@table.hand.look_at_cards}"
-        puts 
-
-        ask_players_for_action # ask each player to fold, call or raise
-
-        if any_player_raised?
-            if action_limit_reached?
-                return puts "ERROR. LIMIT OF ROUNDS (#{ACTION_LIMIT}) HAS BEEN REACHED. Tweak algorithms to be less agressive with raising."
-            end
-        else
-            puts
-            puts "Move all chips to the pool"
-        end
 
         if end_of_game?
-            winner = declare_a_winner
             puts
             puts "END OF GAME"
             puts
+            winner = declare_a_winner
             puts "Declaring a winner..."
             puts
             puts "The winner is... #{winner[:name]} with #{winner[:ranking_name]} (#{winner[:ranking_value]} points) and a sum of #{winner[:sum]}"
-        else 
-            @played_rounds.set_next
-            new_round 
+        else
+
+            puts "New round (#{@played_rounds.current})..."
+            puts
+
+            deal_to_table
+
+            puts "The Table has #{@table.hand.look_at_cards}"
+            puts 
+
+            ask_players_for_action # ask each player to fold, call or raise
+            
+            new_round
         end 
     end
 
@@ -184,6 +266,7 @@ class RoundTracker
         @flop = false # 3 cards on the table
         @turn = false # 4 cards on the table
         @river = false # 5 cards on the table
+        @end = false # end of rounds
     end
 
     def set_next
@@ -195,10 +278,13 @@ class RoundTracker
             @turn = true
         elsif !@river
             @river = true
+        elsif !@end
+            @end = true
         end
     end
 
     def current
+        return "end" if @end
         return "river" if @river
         return "turn" if @turn
         return "flop" if @flop
@@ -269,7 +355,7 @@ class ChipSet
 end
 
 class Player 
-    #attr_accessor :hand
+    attr_accessor :out_of_game
     attr_reader :name, :score, :hand, :chips, :actions
     
     def initialize name
@@ -286,6 +372,10 @@ class Player
         puts "Cards: #{@hand.look_at_cards}"
     end
 
+    def out_of_game
+        @actions.any? { |action| ["fold", "-"].include? action }
+    end
+
     protected
 
     def add_action action, *chip
@@ -299,6 +389,9 @@ class Player
 
         # puts "---------" + game.heighest_bet_total # how to acces this?
 
+        action = "-" if @actions.include? "fold"
+
+        chip = -1 if action == "-"
         chip = 0 if action == "fold"
         chip = 10 if action == "call" # update this to be the same as previous maximum bid. (game.heighest_bet_total - this players total)
 
