@@ -69,19 +69,25 @@ class Game
         @players[1].chips.add_chip AUTOMATIC_BIG_BLIND_BET
     end
 
+    def chips_total
+        @players.map { |player| player.chips.sum }.sum        
+    end
+    
+    def number_of_completed_rounds
+        @players.last.actions.length
+    end
+
     def ask_players_for_action 
         @players.each do |player|
-
             #Players how has folded will still be asked for the record. This could be a subject for refactoring. 
             is_out_of_game = player.out_of_game # saves the value before this round
-
+            
             data = {
                 current_bet: heighest_bet_total,
                 oponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
-                cards_on_table: [], #implement
-                chips_total: [], #implement
-                chips_in_pool: 0, #implement
-                number_of_completed_rounds: 0 #implement
+                cards_on_table: @table.hand.cards,
+                chips_total: chips_total,
+                number_of_completed_rounds: number_of_completed_rounds
             }.to_h
 
             player.do_action data
@@ -93,12 +99,6 @@ class Game
                 puts player.name + " decided to " + player.actions.last + " by " + player.chips.get.last.to_s + " chips"
             end
             puts
-
-            if player.actions.last == "fold"
-                player.out_of_game = true
-                puts "--  #{player.name} IS OUT OF GAME"
-                puts
-            end
         end
 
         if any_player_raised? && number_of_remaining_players > 1
@@ -351,6 +351,10 @@ class ChipSet
     
     def get 
         @chips
+    end
+
+    def sum 
+        @chips.sum
     end
 end
 
