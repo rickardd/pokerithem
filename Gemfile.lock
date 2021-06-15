@@ -1,0 +1,28 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    listen (0.1.0)
+    mustermann (1.1.1)
+      ruby2_keywords (~> 0.0.1)
+    rack (2.2.3)
+    rack-protection (2.1.0)
+      rack
+    ruby2_keywords (0.0.4)
+    rubymon (0.1.1)
+      listen (~> 0.1.0)
+    sinatra (2.1.0)
+      mustermann (~> 1.0)
+      rack (~> 2.2)
+      rack-protection (= 2.1.0)
+      tilt (~> 2.0)
+    tilt (2.0.10)
+
+PLATFORMS
+  x86_64-darwin-19
+
+DEPENDENCIES
+  rubymon
+  sinatra
+
+BUNDLED WITH
+   2.2.17
