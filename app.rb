@@ -17,28 +17,27 @@ class Game
         @table = Table.new
         @played_rounds = RoundTracker.new
         @validator = Validator.new
+        @records = []
     end
     
     def add_player player
         @players << player
+        record "Added player #{player.name}"
     end
 
     def start 
-        puts "Dealing 2 cards to each player..."
-        puts
+        record "Dealing 2 cards to each player..."
         deal_2_to_each_player
         
-        puts "Player 1 has to 'bet' as small blind..."
+        record "Player 1 has to 'bet' as small blind..."
         # The small blind player will automatically bet 10 chips
         add_chips_to_small_blind
-        puts "#{@players[0].name}'s chips (small blind) : #{@players[0].chips.get}"
-        puts
+        record "#{@players[0].name}'s chips (small blind) : #{@players[0].chips.get}"
 
-        puts "Player 2 has to 'bet' as big blind..."
+        record "Player 2 has to 'bet' as big blind..."
         # The big blind player will automatically bet 20 chips.
         add_chips_to_big_blind
-        puts "#{@players[1].name}'s chips (big blind) : #{@players[1].chips.get}"
-        puts
+        record "#{@players[1].name}'s chips (big blind) : #{@players[1].chips.get}"
 
         # to be implemented
         # ask remaining players for actions. Same as do_next but without small- and big-blind
@@ -53,8 +52,7 @@ class Game
     def deal_2_to_each_player
         @players.each do |player|
             @dealer.deal player, 2
-            puts "#{player.name}'s cards #{player.hand.look_at_cards}"
-            puts
+            record "#{player.name}'s cards #{player.hand.look_at_cards}"
         end
     end
     
@@ -91,21 +89,17 @@ class Game
             
             # needs to check if this bet is higher than the previous heighest bet if player is raising. 
             if is_out_of_game
-                puts player.name + " is out of the game"
+                record "#{player.name} is out of the game"
             else
-                puts player.name + " decided to " + player.actions.last + " by " + player.chips.get.last.to_s + " chips"
+                record "#{player.name} decided to #{player.actions.last} by #{player.chips.get.last} chips"
             end
-            puts
         end
 
         if any_player_raised? && number_of_remaining_players > 1
             ask_players_for_action
         else
-            puts "-- SET NEXT ROUND"
-            puts
             @played_rounds.set_next
         end
-
         # what happens if every player decides to fold?
     end
 
@@ -114,14 +108,12 @@ class Game
     end
 
     def last_remaining_player
-        remaining_players = @players.reject { |player| player.out_of_game }
-        
+        remaining_players = @players.reject { |player| player.out_of_game } 
         if remaining_players.length == 1
             remaining_players.first
         else
             raise "There are #{remaining_players.length} remaining players, expected 1 remaining player"
-        end
-            
+        end   
     end
 
     def any_player_raised?
@@ -141,7 +133,6 @@ class Game
         if @table.hand.cards.any?
             return @table.hand.cards.first + player.hand.cards.first            
         end
-
         player.hand.cards.first
     end
 
@@ -186,24 +177,18 @@ class Game
             # 3. The first hash is the winner
             return player_summary_hash.first
         end
-        
     end
     
     def new_round
         if end_of_game?
-            puts
-            puts "END OF GAME"
-            puts
+            record "END OF GAME"
             winner = declare_a_winner
-            puts "Declaring a winner..."
-            puts
-            puts "The winner is... #{winner[:name]} with #{winner[:ranking_name]} (#{winner[:ranking_value]} points) and a sum of #{winner[:sum]}"
+            record "Declaring a winner..."
+            record "The winner is... #{winner[:name]} with #{winner[:ranking_name]} (#{winner[:ranking_value]} points) and a sum of #{winner[:sum]}"
         else
-            puts "New round (#{@played_rounds.current})..."
-            puts
+            record "New round (#{@played_rounds.current})..."
             deal_to_table
-            puts "The Table has #{@table.hand.look_at_cards}"
-            puts 
+            record "The Table has #{@table.hand.look_at_cards}"
             ask_players_for_action # ask each player to fold, call or raise
             new_round
         end 
@@ -211,13 +196,13 @@ class Game
 
     def deal_to_table
         if @played_rounds.current == "flop"
-            puts "Dealing 3 cards to the Table..."
+            record "Dealing 3 cards to the Table..."
             @dealer.deal @table, 3
         elsif @played_rounds.current == "turn"
-            puts "Dealing 1 more card to the Table..."
+            record "Dealing 1 more card to the Table..."
             @dealer.deal @table, 1
         elsif @played_rounds.current == "river"
-            puts "Dealing 1 more card to the Table..."
+            record "Dealing 1 more card to the Table..."
             @dealer.deal @table, 1
         end
     end
@@ -230,6 +215,17 @@ class Game
     # Sets the new big blind player at the beginning of the players array.
     def rotate_players
         @players.rotate!(1)        
+    end
+
+    def record action
+        @records << { action: "New round (#{@played_rounds.current})..."}
+        puts action
+    end
+
+    def get_json
+        puts 
+        puts 
+        puts @records.to_s
     end
 end
 
@@ -466,6 +462,7 @@ game.add_player VirtualPlayer.new "Rob"
 game.add_player VirtualPlayer.new "Kriszta"
 
 game.start
+game.get_json
 # game.next
 # game.next
 

@@ -20,7 +20,7 @@ class Validator
     THREE_OF_A_KIND_NAME = "three of a kind"
     TWO_PAIR_NAME = "two pair"
     ONE_PAIR_NAME = "one pair"
-    HIGHT_CARDS_NAME = "hight cards"
+    HIGH_CARD_NAME = "high card"
     
     class CardSet
         def initialize cards
@@ -51,7 +51,7 @@ class Validator
         return { name: THREE_OF_A_KIND_NAME, value: three_of_a_kind, sum: sum }.to_h if three_of_a_kind?
         return { name: TWO_PAIR_NAME, value: two_pair, sum: sum }.to_h if two_pair?
         return { name: ONE_PAIR_NAME, value: one_pair, sum: sum }.to_h if one_pair?
-        return { name: HIGHT_CARDS_NAME, value: hight_cards, sum: sum }.to_h if hight_cards?
+        return { name: HIGH_CARD_NAME, value: high_card, sum: sum }.to_h if high_card?
     end
     
     private
@@ -106,7 +106,7 @@ class Validator
         ONE_PAIR_VALUE if  @cards.numbers.uniq.map { |number| @cards.numbers.count(number) }.select { |number| number == 2 }.length == 1
     end
     
-    def hight_cards
+    def high_card
         HIGHT_CARDS_VALUE if !(
             royal_flush? ||
             straight_flush? ||
@@ -160,8 +160,8 @@ class Validator
         ONE_PAIR_VALUE == one_pair
     end
     
-    def hight_cards?
-        HIGHT_CARDS_VALUE == hight_cards
+    def high_card?
+        HIGHT_CARDS_VALUE == high_card
     end
 
 end
