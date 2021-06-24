@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, 
+    initial-scale=1.0" />
     <title>Document</title>
 
     <style>
@@ -107,6 +108,62 @@
     </style>
   </head>
   <body>
+
+    <% data.each do |d| %>
+      
+
+      <% if d[:action] == "Add player" %>
+        <%= "Added player #{d[:data][:player]}" %>
+      <% elsif d[:action] == "Deal 2 cards to each player" %>
+        <%= "Dealing 2 cards to each player" %>
+      <% elsif d[:action] == "Show player cards" %>
+        <%= "#{d[:data][:player]}'s cards" %>
+        <br>
+        <% d[:data][:cards][0].each do |card| %>
+          <img src="<%= helper.get_card_image_path card %>" width="50px" />
+        <% end %>
+      <% elsif d[:action] == "Add small blind bet" %>
+        <%= "Add small blind bet (#{d[:data][:player]})" %>
+      <% elsif d[:action] == "Show chips" %>
+        <%= "#{d[:data][:player]} is the #{d[:data][:extra]}" %>
+        <br>  
+        <% d[:data][:chips].each do |chip| %>
+          <div class="chip"><div><%= chip %></div></div>
+        <% end %>
+      <% elsif d[:action] == "Add big blind bet" %>
+        <%= "Add big blind bet (#{d[:data][:player]})" %>
+      <% elsif d[:action] == "New round" %>
+        <%= "New round: #{d[:data][:round]}" %>
+      <% elsif d[:action] == "Show table cards" %>
+        <% if d[:data][:cards].empty? %>
+          No cards on the table yet
+        <% else %>
+          Cards on the table
+          <br>
+          <% d[:data][:cards][0].each do |card| %>
+            <img src="<%= helper.get_card_image_path card %>" width="50px" />
+          <% end %>
+        <% end %>
+      <% elsif d[:action] == "Player decision" %>
+        <% if d[:data][:chips] == 0 %>
+          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game" %>
+        <% else %>
+          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}" %>
+          <div class="chips">
+            <% d[:data][:all_chips].each do |chip| %>
+              <div class="chip"><div><%= chip %></div></div>
+            <% end %>
+          </div>
+        <% end %>
+        <br>
+      <% elsif d[:action] == "END OF GAME" %>
+        END OF GAME
+      <% elsif d[:action] == "Winner" %>
+        <%= "Winner is #{d[:data][:player]} with a #{d[:data][:ranking_name]}: Value: #{d[:data][:ranking_value]}: Sum: #{d[:data][:sum]}" %>
+      <% end %>
+      <br>
+    <% end %>
+
     <main>
       <article class="block full-width">
         <h2 class="lable">Table</h2>
@@ -120,8 +177,8 @@
       <article class="block">
         <h2 class="lable">Kriszta</h2>
         <div class="cards">
-          <div class="card"><img src="/cards/AC.png" /></div>
-          <div class="card"><img src="/cards/AS.png" /></div>
+          <div class="card"><img src="/cards/14C.png" /></div>
+          <div class="card"><img src="/cards/14S.png" /></div>
         </div>
         <div class="chips">
           <div class="chip"><div>1</div></div>

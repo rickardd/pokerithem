@@ -5,7 +5,7 @@ require_relative "validator.rb"
 # 3. - Don't move to next round until no one is raising. 
 
 class Game 
-    attr_reader :heighest_bet_total
+    attr_reader :highest_bet_total
 
     AUTOMATIC_BIG_BLIND_BET = 20
     AUTOMATIC_SMALL_BLIND_BET = 10
@@ -17,27 +17,27 @@ class Game
         @table = Table.new
         @played_rounds = RoundTracker.new
         @validator = Validator.new
-        @records = []
+        @records = Record.new
     end
     
     def add_player player
         @players << player
-        record "Added player #{player.name}"
+        @records.add "Add player", { player: player.name }
     end
 
     def start 
-        record "Dealing 2 cards to each player..."
+        @records.add "Deal 2 cards to each player"
         deal_2_to_each_player
         
-        record "Player 1 has to 'bet' as small blind..."
+        @records.add "Add small blind bet", {player: @players[0].name }
         # The small blind player will automatically bet 10 chips
         add_chips_to_small_blind
-        record "#{@players[0].name}'s chips (small blind) : #{@players[0].chips.get}"
-
-        record "Player 2 has to 'bet' as big blind..."
+        @records.add "Show chips", { extra: "small blind", player: @players[0].name, chips: @players[0].chips.get }
+        
+        @records.add "Add big blind bet", { player: @players[1].name }
         # The big blind player will automatically bet 20 chips.
         add_chips_to_big_blind
-        record "#{@players[1].name}'s chips (big blind) : #{@players[1].chips.get}"
+        @records.add "Show chips", { extra: "big blind", player: @players[1].name, chips: @players[1].chips.get }
 
         # to be implemented
         # ask remaining players for actions. Same as do_next but without small- and big-blind
@@ -45,14 +45,14 @@ class Game
         new_round
     end
 
-    def heighest_bet_total
+    def highest_bet_total
         @players.map { |player| player.chips.get.sum}.max
     end
 
     def deal_2_to_each_player
         @players.each do |player|
             @dealer.deal player, 2
-            record "#{player.name}'s cards #{player.hand.look_at_cards}"
+            @records.add "Show player cards", {player: player.name, cards: player.hand.cards }
         end
     end
     
@@ -78,8 +78,8 @@ class Game
             is_out_of_game = player.out_of_game # saves the value before this round
             
             data = {
-                current_bet: heighest_bet_total,
-                oponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
+                current_bet: highest_bet_total,
+                opponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
                 cards_on_table: @table.hand.cards,
                 chips_total: chips_total,
                 number_of_completed_rounds: number_of_completed_rounds
@@ -89,9 +89,9 @@ class Game
             
             # needs to check if this bet is higher than the previous heighest bet if player is raising. 
             if is_out_of_game
-                record "#{player.name} is out of the game"
+                @records.add "Game over player", player.name
             else
-                record "#{player.name} decided to #{player.actions.last} by #{player.chips.get.last} chips"
+                @records.add "Player decision", {player: player.name, decision: player.actions.last, all_chips: player.chips.get, last_chip: player.chips.get.last }
             end
         end
 
@@ -181,14 +181,13 @@ class Game
     
     def new_round
         if end_of_game?
-            record "END OF GAME"
+            @records.add "END OF GAME"
             winner = declare_a_winner
-            record "Declaring a winner..."
-            record "The winner is... #{winner[:name]} with #{winner[:ranking_name]} (#{winner[:ranking_value]} points) and a sum of #{winner[:sum]}"
+            @records.add "Winner", { player: winner[:name], ranking_name: winner[:ranking_name], ranking_value: winner[:ranking_value], sum: winner[:sum] }
         else
-            record "New round (#{@played_rounds.current})..."
+            @records.add "New round", { round: @played_rounds.current }
             deal_to_table
-            record "The Table has #{@table.hand.look_at_cards}"
+            @records.add "Show table cards", { cards: @table.hand.cards }
             ask_players_for_action # ask each player to fold, call or raise
             new_round
         end 
@@ -196,13 +195,13 @@ class Game
 
     def deal_to_table
         if @played_rounds.current == "flop"
-            record "Dealing 3 cards to the Table..."
+            @records.add "Deal 3 cards to the Table..."
             @dealer.deal @table, 3
         elsif @played_rounds.current == "turn"
-            record "Dealing 1 more card to the Table..."
+            @records.add "Deal 1 more card to the Table..."
             @dealer.deal @table, 1
         elsif @played_rounds.current == "river"
-            record "Dealing 1 more card to the Table..."
+            @records.add "Deal 1 more card to the Table..."
             @dealer.deal @table, 1
         end
     end
@@ -217,15 +216,23 @@ class Game
         @players.rotate!(1)        
     end
 
-    def record action
-        @records << { action: "New round (#{@played_rounds.current})..."}
+    def get_json
+        @records.get_json
+    end
+end
+
+class Record
+    def initialize
+       @records = [] 
+    end
+
+    def add action, data = nil
+        @records << { action: action, data: data}
         puts action
     end
 
     def get_json
-        puts 
-        puts 
-        puts @records.to_s
+        @records
     end
 end
 
@@ -294,7 +301,7 @@ class Deck
     private
 
     def generate_deck
-        (1..14).flat_map { |number| (1..4).map { |color| [number, color] } }.shuffle
+        (2..14).flat_map { |number| (1..4).map { |color| [number, color] } }.shuffle
     end
 end
 
@@ -320,7 +327,7 @@ class ChipSet
     end
     
     def get 
-        @chips
+        @chips.clone
     end
 
     def sum 
@@ -357,12 +364,12 @@ class Player
         raise "No action defined" if action.empty?
         raise "You decided to raise but defined no bet" if actions == "raise" && chip.empty?
         # implement this
-        #raise "Raise is not heigh enough" if game.heighest_bet_total < @chips.get.sum + chip
+        #raise "Raise is not heigh enough" if game.highest_bet_total < @chips.get.sum + chip
         action = "-" if @actions.include? "fold"
 
         chip = -1 if action == "-"
         chip = 0 if action == "fold"
-        chip = 10 if action == "call" # update this to be the same as previous maximum bid. (game.heighest_bet_total - this players total)
+        chip = 10 if action == "call" # update this to be the same as previous maximum bid. (game.highest_bet_total - this players total)
 
         @actions <<  action
         
@@ -456,13 +463,24 @@ class VirtualPlayer < Player
     end
 end
 
+class Helper
+    def get_card_image_path card
+        suit = ["C", "D", "H", "S"][card.last - 1]
+        value = card[0]
+        "/cards/#{value}#{suit}.png"
+    end
+    
+end
+
 game = Game.new
 
 game.add_player VirtualPlayer.new "Rob"
 game.add_player VirtualPlayer.new "Kriszta"
 
 game.start
-game.get_json
+puts
+puts
+puts game.get_json
 # game.next
 # game.next
 
