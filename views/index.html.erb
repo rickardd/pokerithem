@@ -140,7 +140,7 @@
         <% else %>
           Cards on the table
           <br>
-          <% d[:data][:cards][0].each do |card| %>
+          <% d[:data][:cards].each do |card| %>
             <img src="<%= helper.get_card_image_path card %>" width="50px" />
           <% end %>
         <% end %>

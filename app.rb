@@ -187,7 +187,7 @@ class Game
         else
             @records.add "New round", { round: @played_rounds.current }
             deal_to_table
-            @records.add "Show table cards", { cards: @table.hand.cards }
+            @records.add "Show table cards", { cards: @table.hand.get }
             ask_players_for_action # ask each player to fold, call or raise
             new_round
         end 
@@ -217,6 +217,7 @@ class Game
     end
 
     def get_json
+        puts @records.get_json
         @records.get_json
     end
 
