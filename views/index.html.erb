@@ -145,10 +145,10 @@
           <% end %>
         <% end %>
       <% elsif d[:action] == "Player decision" %>
-        <% if d[:data][:chips] == 0 %>
+        <% if d[:data][:last_chip] == 0 %>
           <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game" %>
         <% else %>
-          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}" %>
+          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}:" %>
           <div class="chips">
             <% d[:data][:all_chips].each do |chip| %>
               <div class="chip"><div><%= chip %></div></div>
@@ -164,60 +164,39 @@
       <br>
     <% end %>
 
+
     <main>
       <article class="block full-width">
         <h2 class="lable">Table</h2>
         <div class="cards">
-          <div class="card"><img src="/cards/2D.png" /></div>
-          <div class="card"><img src="/cards/3S.png" /></div>
-          <div class="card"><img src="/cards/3H.png" /></div>
+          <% result[:table].hand.get.each do |card| %>
+            <img class="card" src="<%= helper.get_card_image_path card %>" />
+          <% end %>
         </div>
         <div class="value">100</div>
       </article>
-      <article class="block">
-        <h2 class="lable">Kriszta</h2>
-        <div class="cards">
-          <div class="card"><img src="/cards/14C.png" /></div>
-          <div class="card"><img src="/cards/14S.png" /></div>
-        </div>
-        <div class="chips">
-          <div class="chip"><div>1</div></div>
-          <div class="chip"><div>3</div></div>
-          <div class="chip"><div>5</div></div>
-          <div class="chip"><div>10</div></div>
-          <div class="chip"><div>100</div></div>
-        </div>
-        <div class="actions">
-          <div class="action">Raised: 10</div>
-          <div class="action">Call: 5</div>
-          <div class="action">Raise: 3</div>
-          <div class="action">Raise: 3</div>
-          <div class="action">Fold</div>
-        </div>
-        <div class="value">100</div>
-      </article>
-      <article class="block">
-        <h2 class="lable">Rob</h2>
-        <div class="cards">
-          <div class="card"><img src="/cards/7D.png" /></div>
-          <div class="card"><img src="/cards/7H.png" /></div>
-        </div>
-        <div class="chips">
-          <div class="chip"><div>1</div></div>
-          <div class="chip"><div>3</div></div>
-          <div class="chip"><div>5</div></div>
-          <div class="chip"><div>10</div></div>
-          <div class="chip"><div>100</div></div>
-        </div>
-        <div class="actions">
-          <div class="action">Raised: 10</div>
-          <div class="action">Call: 5</div>
-          <div class="action">Raise: 3</div>
-          <div class="action">Raise: 3</div>
-          <div class="action">Fold</div>
-        </div>
-        <div class="value">100</div>
-      </article>
+      <% result[:players].each do |player| %>
+        <article class="block">
+          <h2 class="lable"><%= player.name %></h2>
+          <div class="cards">
+            <% player.hand.get.each do |card| %>
+              <img class="card" src="<%= helper.get_card_image_path card %>" />
+            <% end %>
+          </div>
+          <div class="chips">
+            <% player.chips.get.each do |chip| %>
+              <div class="chip"><div><%= chip %></div></div>
+            <% end %>
+          </div>
+          <div class="actions">
+          <% player.actions.each do |action| %>
+              <div class="action"><%= action %></div>
+            <% end %>
+            
+          </div>
+          <div class="value">100</div>
+        </article>
+      <% end %>
     </main>
   </body>
 </html>

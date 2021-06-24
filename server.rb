@@ -12,7 +12,8 @@ get '/' do
 
     game.start
     data = game.get_json
+    result = game.result
 
-    erb :index, locals: { data: data, helper: Helper.new }
+    erb :index, locals: { data: data, result: result, helper: Helper.new }
       
 end

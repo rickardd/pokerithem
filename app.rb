@@ -91,7 +91,7 @@ class Game
             if is_out_of_game
                 @records.add "Game over player", player.name
             else
-                @records.add "Player decision", {player: player.name, decision: player.actions.last, all_chips: player.chips.get, last_chip: player.chips.get.last }
+                @records.add "Player decision", {player: player.name, decision: player.actions.last, all_chips: player.chips.get, last_chip: player.chips.get.last, chips_sum: player.chips.sum }
             end
         end
 
@@ -218,6 +218,13 @@ class Game
 
     def get_json
         @records.get_json
+    end
+
+    def result
+        {
+            players: @players,
+            table: @table,
+        }
     end
 end
 
@@ -404,6 +411,10 @@ class Hand
     
     def add cards
         @cards << cards
+    end
+
+    def get 
+        @cards.flatten(1)
     end
 end
 
