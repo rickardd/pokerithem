@@ -1,4 +1,5 @@
 require_relative "validator.rb" 
+require "pry"
 
 # 1. if only 2 players. If one folds the other player wins
 # 2. if more than 2 players. we have to ask remianing players for action before moving to flop-round
@@ -85,13 +86,19 @@ class Game
                 number_of_completed_rounds: number_of_completed_rounds
             }.to_h
 
-            player.do_action data
+            successful_action = player.do_action data
             
-            # needs to check if this bet is higher than the previous heighest bet if player is raising. 
+            # needs to check if this bet is higher than the previous highest bet if player is raising. 
             if is_out_of_game
                 @records.add "Game over player", player.name
             else
-                @records.add "Player decision", {player: player.name, decision: player.actions.last, all_chips: player.chips.get, last_chip: player.chips.get.last, chips_sum: player.chips.sum }
+                if !successful_action
+                    # This means the player has been forced another action due to lack of money e.g 
+                    # - raise 10 chips if only 5 in wallet will result in a fold if earlier current bid is higher than 5. 
+                    # - raising by 20 chips if only 10 in wallet will result in a call if current bid is 10
+                    @records.add "Out of money", { player: player.name, wallet: player.chips.wallet, all_chips: player.chips.get }
+                end
+                @records.add "Player decision", {player: player.name, decision: player.actions.last, all_chips: player.chips.get, last_chip: player.chips.get.last, chips_sum: player.chips.sum, wallet: player.chips.wallet }
             end
         end
 
@@ -314,16 +321,14 @@ class Deck
 end
 
 class ChipSet 
+    attr_reader :wallet
+
     def initialize
         @chips = []
-        @wallet = 50
+        @wallet = 52
     end
 
     def add_chip number
-        if @wallet - number <= 0
-            # puts "OUT OF MONEY MATE!"
-            return false
-        end
         @wallet -= number
         @chips << number
     end
@@ -362,30 +367,44 @@ class Player
     end
 
     def out_of_game
-        @actions.any? { |action| ["fold", "-"].include? action }
+        @actions.any? { |action| ["fold", "-"].include? action } || @chips.wallet <= 0
     end
 
     protected
 
     def add_action action, *chip
         chip = chip.first
-        raise "No action defined" if action.empty?
-        raise "You decided to raise but defined no bet" if actions == "raise" && chip.empty?
+        # raise "No action defined" if action.empty?
+        # raise "You decided to raise but defined no bet" if action == "raise" && chip.empty?
         # implement this
         #raise "Raise is not heigh enough" if game.highest_bet_total < @chips.get.sum + chip
         action = "-" if @actions.include? "fold"
-
+        
+        bid_greater_than_wallet = chip && @chips.wallet < chip
+        
         chip = -1 if action == "-"
         chip = 0 if action == "fold"
         chip = 10 if action == "call" # update this to be the same as previous maximum bid. (game.highest_bet_total - this players total)
+        chip = @chips.wallet  if action == "raise" && bid_greater_than_wallet # sets chip to remaining many the player has if betting too high. 
+        # Make sure player has enough money if the do a call. 
+
+        action = "fold" if chip.between?(0, 9) # 10 has to be updated to previous players bet. 
+        action = "call" if chip == 10
+
+        puts "--- final chip #{chip}"
+        puts "--- final action #{action}"
+        puts "--- final wallet #{@chips.wallet}"
+
+        @chips.add_chip chip
 
         @actions <<  action
-        
-        last_bet = @chips.add_chip chip
 
-        if !last_bet
-            puts "(#{name} IS OUT OF MONEY)"
-        end
+
+        # if bid_greater_than_wallet
+        #     binding.pry
+        # end
+
+        !bid_greater_than_wallet # Returns false if attempted bid was greater than the money left in the wallet, else true
     end
     
 end

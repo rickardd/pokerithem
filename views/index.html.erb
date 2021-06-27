@@ -146,9 +146,9 @@
         <% end %>
       <% elsif d[:action] == "Player decision" %>
         <% if d[:data][:last_chip] == 0 %>
-          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game" %>
+          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
         <% else %>
-          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}:" %>
+          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}, Remaining: $#{d[:data][:wallet]}" %>
           <div class="chips">
             <% d[:data][:all_chips].each do |chip| %>
               <div class="chip"><div><%= chip %></div></div>
@@ -156,6 +156,13 @@
           </div>
         <% end %>
         <br>
+      <% elsif d[:action] == "Out of money" %>
+        <%= "#{d[:data][:player]} tried to bid more than the money left. Money left #{d[:data][:wallet]}" %>
+        <div class="chips">
+          <% d[:data][:all_chips].each do |chip| %>
+            <div class="chip"><div><%= chip %></div></div>
+          <% end %>
+        </div>
       <% elsif d[:action] == "END OF GAME" %>
         END OF GAME
       <% elsif d[:action] == "Winner" %>
@@ -173,7 +180,6 @@
             <img class="card" src="<%= helper.get_card_image_path card %>" />
           <% end %>
         </div>
-        <div class="value">100</div>
       </article>
       <% result[:players].each do |player| %>
         <article class="block">
@@ -194,7 +200,7 @@
             <% end %>
             
           </div>
-          <div class="value">100</div>
+          <div class="value">$<%= player.chips.wallet %></div>
         </article>
       <% end %>
     </main>
