@@ -109,68 +109,70 @@
   </head>
   <body>
 
-    <% data.each do |d| %>
+    <% data.each do |d| %>      
       
-
-      <% if d[:action] == "Add player" %>
-        <%= "Added player #{d[:data][:player]}" %>
-      <% elsif d[:action] == "Deal 2 cards to each player" %>
-        <%= "Dealing 2 cards to each player" %>
-      <% elsif d[:action] == "Show player cards" %>
-        <%= "#{d[:data][:player]}'s cards" %>
-        <br>
-        <% d[:data][:cards][0].each do |card| %>
-          <img src="<%= helper.get_card_image_path card %>" width="50px" />
-        <% end %>
-      <% elsif d[:action] == "Add small blind bet" %>
-        <%= "Add small blind bet (#{d[:data][:player]})" %>
-      <% elsif d[:action] == "Show chips" %>
-        <%= "#{d[:data][:player]} is the #{d[:data][:extra]}" %>
-        <br>  
-        <% d[:data][:chips].each do |chip| %>
-          <div class="chip"><div><%= chip %></div></div>
-        <% end %>
-      <% elsif d[:action] == "Add big blind bet" %>
-        <%= "Add big blind bet (#{d[:data][:player]})" %>
-      <% elsif d[:action] == "New round" %>
-        <%= "New round: #{d[:data][:round]}" %>
-      <% elsif d[:action] == "Show table cards" %>
-        <% if d[:data][:cards].empty? %>
-          No cards on the table yet
-        <% else %>
-          Cards on the table
+      <% case d[:action] 
+        when "Add player" %>
+          <%= "Added player #{d[:data][:player]}" %>
+        <% when "Deal 2 cards to each player" %>
+          <%= "Dealing 2 cards to each player" %>
+        <% when "Show player cards" %>
+          <%= "#{d[:data][:player]}'s cards" %>
           <br>
-          <% d[:data][:cards].each do |card| %>
+          <% d[:data][:cards][0].each do |card| %>
             <img src="<%= helper.get_card_image_path card %>" width="50px" />
           <% end %>
-        <% end %>
-      <% elsif d[:action] == "Player decision" %>
-        <% if d[:data][:last_chip] == 0 %>
-          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
-        <% else %>
-          <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}, Remaining: $#{d[:data][:wallet]}" %>
-          <div class="chips">
-            <% d[:data][:all_chips].each do |chip| %>
-              <div class="chip"><div><%= chip %></div></div>
-            <% end %>
-          </div>
-        <% end %>
-        <br>
-      <% elsif d[:action] == "Out of money" %>
-        <%= "#{d[:data][:player]} tried to bid more than the money left. Money left #{d[:data][:wallet]}" %>
-        <div class="chips">
-          <% d[:data][:all_chips].each do |chip| %>
+        <% when "Add small blind bet" %>
+          <%= "Add small blind bet (#{d[:data][:player]})" %>
+        <% when "Show chips" %>
+          <%= "#{d[:data][:player]} is the #{d[:data][:extra]}" %>
+          <br>  
+          <% d[:data][:chips].each do |chip| %>
             <div class="chip"><div><%= chip %></div></div>
           <% end %>
-        </div>
-      <% elsif d[:action] == "END OF GAME" %>
-        END OF GAME
-      <% elsif d[:action] == "Winner" %>
-        <%= "Winner is #{d[:data][:player]} with a #{d[:data][:ranking_name]}: Value: #{d[:data][:ranking_value]}: Sum: #{d[:data][:sum]}" %>
+        <% when "Add big blind bet" %>
+          <%= "Add big blind bet (#{d[:data][:player]})" %>
+        <% when "New round" %>
+          <%= "New round: #{d[:data][:round]}" %>
+        <% when "Show table cards" %>
+          <% if d[:data][:cards].empty? %>
+            No cards on the table yet
+          <% else %>
+            Cards on the table
+            <br>
+            <% d[:data][:cards].each do |card| %>
+              <img src="<%= helper.get_card_image_path card %>" width="50px" />
+            <% end %>
+          <% end %>
+        <% when "Player decision" %>
+          <% if d[:data][:last_chip] == 0 %>
+            <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
+          <% else %>
+            <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}, Remaining: $#{d[:data][:wallet]}" %>
+            <div class="chips">
+              <% d[:data][:all_chips].each do |chip| %>
+                <div class="chip"><div><%= chip %></div></div>
+              <% end %>
+            </div>
+          <% end %>
+          <br>
+        <% when "Out of money" %>
+          <!-- this is not displayed correctly -->
+          <% if false %>  
+            <%= "#{d[:data][:player]} tried to bid more than the money left. Money left #{d[:data][:wallet]}" %>
+            <div class="chips">
+              <% d[:data][:all_chips].each do |chip| %>
+                <div class="chip"><div><%= chip %></div></div>
+              <% end %>
+            </div>
+          <% end %>
+        <% when "END OF GAME" %>
+          END OF GAME
+        <% when "Winner" %>
+          <%= "Winner is #{d[:data][:player]} with a #{d[:data][:ranking_name]}: Value: #{d[:data][:ranking_value]}: Sum: #{d[:data][:sum]}" %>
       <% end %>
       <br>
     <% end %>
-
 
     <main>
       <article class="block full-width">
