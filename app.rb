@@ -27,6 +27,11 @@ class Game
     end
 
     def start 
+        set_up_first_round
+        new_round
+    end
+
+    def set_up_first_round
         @records.add "Deal 2 cards to each player"
         deal_2_to_each_player
         
@@ -42,8 +47,21 @@ class Game
 
         # to be implemented
         # ask remaining players for actions. Same as do_next but without small- and big-blind
+        
+    end
 
-        new_round
+    def new_round
+        if end_of_game?
+            @records.add "END OF GAME"
+            winner = declare_a_winner
+            @records.add "Winner", { player: winner[:name], ranking_name: winner[:ranking_name], ranking_value: winner[:ranking_value], sum: winner[:sum] }
+        else
+            @records.add "New round", { round: @played_rounds.current }
+            deal_to_table
+            @records.add "Show table cards", { cards: @table.hand.get }
+            ask_players_for_action # ask each player to fold, call or raise
+            new_round
+        end 
     end
 
     def highest_bet_total
@@ -73,20 +91,22 @@ class Game
         @players.last.actions.length
     end
 
+    def current_round_data_hash player
+        data = {
+            current_bet: highest_bet_total,
+            opponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
+            cards_on_table: @table.hand.cards,
+            chips_total: chips_total,
+            number_of_completed_rounds: number_of_completed_rounds
+        }.to_h
+    end
+
     def ask_players_for_action 
         @players.each do |player|
             #Players how has folded will still be asked for the record. This could be a subject for refactoring. 
-            is_out_of_game = player.out_of_game # saves the value before this round
-            
-            data = {
-                current_bet: highest_bet_total,
-                opponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
-                cards_on_table: @table.hand.cards,
-                chips_total: chips_total,
-                number_of_completed_rounds: number_of_completed_rounds
-            }.to_h
+            is_out_of_game = player.out_of_game # saves the value before this round   
 
-            successful_action = player.do_action data
+            successful_action = player.do_action current_round_data_hash(player)
             
             # needs to check if this bet is higher than the previous highest bet if player is raising. 
             if is_out_of_game
@@ -151,7 +171,7 @@ class Game
         players.reject { |player| player.actions.last == "fold" }
     end
     
-    def create_winner_result_hash player
+    def winner_result_hash player
         ranking = @validator.validate(full_hand(player))
         {
             name: player.name, 
@@ -167,37 +187,23 @@ class Game
 
         if current_players.length == 1
             player = current_players.first
-            create_winner_result_hash player
+            winner_result_hash player
         elsif players_who_did_not_fold.length == 0
             # If everyone folded, the winner is the player after the one who folded first. In ohter words the second player. 
             player = current_players[1]
-            create_winner_result_hash player
+            winner_result_hash player
         elsif players_who_did_not_fold.length == 1
             # If only one player who didn't fold the last round
             player = players_who_did_not_fold.first  
-            create_winner_result_hash player
+            winner_result_hash player
         else
             # 1. Create a new array of hashes e.g { name: "Rob", ranking_name: "royal_flush", ranking_value: 10, sum: 10 [the total sum of cards] }
-            player_summary_hash = players_who_did_not_fold.map { |player| create_winner_result_hash player }
+            player_summary_hash = players_who_did_not_fold.map { |player| winner_result_hash player }
             # 2. Sort by highest ranking and sum
             player_summary_hash.sort_by! { |a| [ a[:ranking_value], a[:sum] ] }.reverse
             # 3. The first hash is the winner
             return player_summary_hash.first
         end
-    end
-    
-    def new_round
-        if end_of_game?
-            @records.add "END OF GAME"
-            winner = declare_a_winner
-            @records.add "Winner", { player: winner[:name], ranking_name: winner[:ranking_name], ranking_value: winner[:ranking_value], sum: winner[:sum] }
-        else
-            @records.add "New round", { round: @played_rounds.current }
-            deal_to_table
-            @records.add "Show table cards", { cards: @table.hand.get }
-            ask_players_for_action # ask each player to fold, call or raise
-            new_round
-        end 
     end
 
     def deal_to_table
