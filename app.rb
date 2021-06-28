@@ -19,6 +19,7 @@ class Game
         @played_rounds = RoundTracker.new
         @validator = Validator.new
         @records = Record.new
+        @winner = nil
     end
     
     def add_player player
@@ -53,8 +54,8 @@ class Game
     def new_round
         if end_of_game?
             @records.add "END OF GAME"
-            winner = declare_a_winner
-            @records.add "Winner", { player: winner[:name], ranking_name: winner[:ranking_name], ranking_value: winner[:ranking_value], sum: winner[:sum] }
+            @winner = declare_a_winner
+            @records.add "Winner", { player: @winner[:name], ranking_name: @winner[:ranking_name], ranking_value: @winner[:ranking_value], sum: @winner[:sum] }
         else
             @records.add "New round", { round: @played_rounds.current }
             deal_to_table
@@ -202,7 +203,7 @@ class Game
             # 2. Sort by highest ranking and sum
             player_summary_hash.sort_by! { |a| [ a[:ranking_value], a[:sum] ] }.reverse
             # 3. The first hash is the winner
-            return player_summary_hash.first
+            player_summary_hash.first
         end
     end
 
@@ -238,6 +239,7 @@ class Game
         {
             players: @players,
             table: @table,
+            winner: @winner,
         }
     end
 end
