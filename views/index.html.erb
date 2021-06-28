@@ -5,12 +5,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, 
     initial-scale=1.0" />
-    <title>Document</title>
+    <title>Pokerithem</title>
 
     <style>
       * {
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
       }
       body {
         font-family: helvetica;
@@ -20,40 +21,39 @@
         flex-wrap: wrap;
       }
       .block {
-        border: 1px solid #0003;
-        padding: 36px 24px 24px 24px;
-        margin: 24px;
-        box-shadow: 0 2px 4px 2px rgb(0 0 0 / 10%);
+      margin: 48px;
         position: relative;
         display: flex;
-        flex-basis: 600px;
         justify-content: space-between;
         column-gap: 12px;
         flex-grow: 1;
       }
-      .full-width {
+
+      .block-table {
         flex-basis: 100%;
+        justify-content: center;
       }
+
       .lable {
-        font-size: 2rem;
+        font-size: 1.2rem;
         position: absolute;
-        top: 0;
-        left: 12px;
-        transform: translateY(-50%);
-        background: white;
-        display: inline-block;
-        padding: 0 12px;
+        top: -4px;
+        left: 0;
+        transform: translateY(-100%);
+      display: inline-block;
+        color: #ffffffdb;
+        font-weight: 300;
       }
 
       .value {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         position: absolute;
-        bottom: 0;
-        right: 12px;
-        transform: translateY(50%);
-        background: white;
+        top: 0;
+        right: 0;
+        transform: translateY(-100%);
         display: inline-block;
-        padding: 0 12px;
+        color: white;
+        font-weight: 300;
       }
 
       .cards {
@@ -61,7 +61,15 @@
         gap: 12px;
       }
       .card {
-        width: 100px;
+        width: 80px;
+        box-shadow: 0 10px 5px -6px rgba(0, 0, 0, 0.5);
+      }
+
+      .card-empty {
+        border: 4px solid white;
+        border-radius: 10px;
+        height: 130px;
+
       }
 
       .card img {
@@ -78,15 +86,33 @@
       .chip {
         width: 30px;
         height: 30px;
-        border: 2px solid black;
+        border: 1px solid white;
         border-radius: 50%;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         display: flex;
         justify-items: center;
         align-items: center;
+        background-color: #a50000;
+        color: white;
+        box-shadow: 0 4px 2px 0px rgba(0, 0, 0, 0.4);
       }
       .chip > * {
         margin: auto;
+      }
+
+      .actions-wrapper {
+        position: absolute;
+        top: 0;
+        left: auto;
+        bottom: 0;
+        right: 0;
+        width: 30%;
+        background-color: rgba(0,0,0,0.5);
+        padding: 24px;
+        color: #fff;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        overflow-y: scroll;
       }
 
       .actions {
@@ -105,106 +131,126 @@
         white-space: nowrap;
         text-align: center;
       }
+
+      .table {
+        position: relative;
+        background: radial-gradient(circle, rgba(92,156,11,1) 0%, rgba(12,85,0,1) 100%);  
+        min-height: 100vh;
+      }
+
+      .table-left {
+        width: 70%;
+      }
+
     </style>
   </head>
   <body>
 
-    <% data.each do |d| %>      
-      
-      <% case d[:action] 
-        when "Add player" %>
-          <%= "Added player #{d[:data][:player]}" %>
-        <% when "Deal 2 cards to each player" %>
-          <%= "Dealing 2 cards to each player" %>
-        <% when "Show player cards" %>
-          <%= "#{d[:data][:player]}'s cards" %>
-          <br>
-          <% d[:data][:cards][0].each do |card| %>
-            <img src="<%= helper.get_card_image_path card %>" width="50px" />
-          <% end %>
-        <% when "Add small blind bet" %>
-          <%= "Add small blind bet (#{d[:data][:player]})" %>
-        <% when "Show chips" %>
-          <%= "#{d[:data][:player]} is the #{d[:data][:extra]}" %>
-          <br>  
-          <% d[:data][:chips].each do |chip| %>
-            <div class="chip"><div><%= chip %></div></div>
-          <% end %>
-        <% when "Add big blind bet" %>
-          <%= "Add big blind bet (#{d[:data][:player]})" %>
-        <% when "New round" %>
-          <%= "New round: #{d[:data][:round]}" %>
-        <% when "Show table cards" %>
-          <% if d[:data][:cards].empty? %>
-            No cards on the table yet
-          <% else %>
-            Cards on the table
-            <br>
-            <% d[:data][:cards].each do |card| %>
-              <img src="<%= helper.get_card_image_path card %>" width="50px" />
-            <% end %>
-          <% end %>
-        <% when "Player decision" %>
-          <% if d[:data][:last_chip] == 0 %>
-            <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
-          <% else %>
-            <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}, Remaining: $#{d[:data][:wallet]}" %>
-            <div class="chips">
-              <% d[:data][:all_chips].each do |chip| %>
-                <div class="chip"><div><%= chip %></div></div>
-              <% end %>
-            </div>
-          <% end %>
-          <br>
-        <% when "Out of money" %>
-          <!-- this is not displayed correctly -->
-          <% if false %>  
-            <%= "#{d[:data][:player]} tried to bid more than the money left. Money left #{d[:data][:wallet]}" %>
-            <div class="chips">
-              <% d[:data][:all_chips].each do |chip| %>
-                <div class="chip"><div><%= chip %></div></div>
-              <% end %>
-            </div>
-          <% end %>
-        <% when "END OF GAME" %>
-          END OF GAME
-        <% when "Winner" %>
-          <%= "Winner is #{d[:data][:player]} with a #{d[:data][:ranking_name]}: Value: #{d[:data][:ranking_value]}: Sum: #{d[:data][:sum]}" %>
-      <% end %>
-      <br>
-    <% end %>
+    <div class="table">
 
-    <main>
-      <article class="block full-width">
-        <h2 class="lable">Table</h2>
-        <div class="cards">
-          <% result[:table].hand.get.each do |card| %>
-            <img class="card" src="<%= helper.get_card_image_path card %>" />
+      <div class="actions-wrapper">
+        <% data.each do |d| %>      
+          
+          <% case d[:action] 
+            when "Add player" %>
+              <%= "Added player #{d[:data][:player]}" %>
+            <% when "Deal 2 cards to each player" %>
+              <%= "Dealing 2 cards to each player" %>
+            <% when "Show player cards" %>
+              <%= "#{d[:data][:player]}'s cards" %>
+              <br>
+              <% d[:data][:cards][0].each do |card| %>
+                <img src="<%= helper.get_card_image_path card %>" width="50px" />
+              <% end %>
+            <% when "Add small blind bet" %>
+              <%= "Add small blind bet (#{d[:data][:player]})" %>
+            <% when "Show chips" %>
+              <%= "#{d[:data][:player]} is the #{d[:data][:extra]}" %>
+              <br>  
+              <% d[:data][:chips].each do |chip| %>
+                <div class="chip"><div><%= chip %></div></div>
+              <% end %>
+            <% when "Add big blind bet" %>
+              <%= "Add big blind bet (#{d[:data][:player]})" %>
+            <% when "New round" %>
+              <%= "New round: #{d[:data][:round]}" %>
+            <% when "Show table cards" %>
+              <% if d[:data][:cards].empty? %>
+                No cards on the table yet
+              <% else %>
+                Cards on the table
+                <br>
+                <% d[:data][:cards].each do |card| %>
+                  <img src="<%= helper.get_card_image_path card %>" width="50px" />
+                <% end %>
+              <% end %>
+            <% when "Player decision" %>
+              <% if d[:data][:last_chip] == 0 %>
+                <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
+              <% else %>
+                <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}, Remaining: $#{d[:data][:wallet]}" %>
+                <div class="chips">
+                  <% d[:data][:all_chips].each do |chip| %>
+                    <div class="chip"><div><%= chip %></div></div>
+                  <% end %>
+                </div>
+              <% end %>
+              <br>
+            <% when "Out of money" %>
+              <!-- this is not displayed correctly -->
+              <% if false %>  
+                <%= "#{d[:data][:player]} tried to bid more than the money left. Money left #{d[:data][:wallet]}" %>
+                <div class="chips">
+                  <% d[:data][:all_chips].each do |chip| %>
+                    <div class="chip"><div><%= chip %></div></div>
+                  <% end %>
+                </div>
+              <% end %>
+            <% when "END OF GAME" %>
+              END OF GAME
+            <% when "Winner" %>
+              <%= "Winner is #{d[:data][:player]} with a #{d[:data][:ranking_name]}: Value: #{d[:data][:ranking_value]}: Sum: #{d[:data][:sum]}" %>
           <% end %>
-        </div>
-      </article>
-      <% result[:players].each do |player| %>
-        <article class="block">
-          <h2 class="lable"><%= player.name %></h2>
+          <br>
+        <% end %>
+      </div>
+
+      <main class="table-left">
+        <article class="block block-table">
           <div class="cards">
-            <% player.hand.get.each do |card| %>
+            <% result[:table].hand.get.each do |card| %>
               <img class="card" src="<%= helper.get_card_image_path card %>" />
             <% end %>
-          </div>
-          <div class="chips">
-            <% player.chips.get.each do |chip| %>
-              <div class="chip"><div><%= chip %></div></div>
+
+            <% remaining_cards = 5 - result[:table].hand.get.length %>
+            <% (1..remaining_cards).to_a.each do |card| %>
+              <div class="card card-empty"></div>
             <% end %>
           </div>
-          <div class="actions">
-          <% player.actions.each do |action| %>
-              <div class="action"><%= action %></div>
-            <% end %>
-            
-          </div>
-          <div class="value">$<%= player.chips.wallet %></div>
         </article>
-      <% end %>
-    </main>
+        <% result[:players].each do |player| %>
+          <article class="block">
+            <h2 class="lable"><%= player.name %></h2>
+            <div class="cards">
+              <% player.hand.get.each do |card| %>
+                <img class="card" src="<%= helper.get_card_image_path card %>" />
+              <% end %>
+            </div>
+            <div class="chips">
+              <% player.chips.get.each do |chip| %>
+                <div class="chip"><div><%= chip %></div></div>
+              <% end %>
+            </div>
+            <div class="actions">
+            <% player.actions.each do |action| %>
+                <div class="action"><%= action %></div>
+              <% end %>
+              
+            </div>
+            <div class="value">$<%= player.chips.wallet %></div>
+          </article>
+        <% end %>
+      </main>
+    </div>
   </body>
 </html>
