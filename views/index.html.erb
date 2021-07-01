@@ -19,14 +19,17 @@
       main {
         display: flex;
         flex-wrap: wrap;
+        justify-content: center;
       }
       .block {
-      margin: 48px;
+        margin: 48px;
         position: relative;
         display: flex;
         justify-content: space-between;
-        column-gap: 12px;
-        flex-grow: 1;
+        gap: 24px;
+        flex-grow: 0;
+        flex-direction: column;
+        align-items: center;
       }
 
       .block-table {
@@ -40,7 +43,7 @@
         top: -4px;
         left: 0;
         transform: translateY(-100%);
-      display: inline-block;
+        display: inline-block;
         color: #ffffffdb;
         font-weight: 300;
       }
@@ -48,7 +51,7 @@
       .value {
         font-size: 1.2rem;
         position: absolute;
-        top: 0;
+        top: -4px;
         right: 0;
         transform: translateY(-100%);
         display: inline-block;
@@ -82,6 +85,7 @@
         gap: 12px;
         align-content: flex-start;
         justify-content: center;
+        max-width: 150px;
       }
       .chip {
         width: 30px;
@@ -121,6 +125,7 @@
         gap: 12px;
         align-content: flex-start;
         justify-content: flex-end;
+        width: 100%;
       }
       .action {
         border: 2px solid #0007;
@@ -130,6 +135,7 @@
         font-size: 0.8rem;
         white-space: nowrap;
         text-align: center;
+        text-transform: capitalize;
       }
 
       .actions-wrapper .chips {
@@ -150,7 +156,7 @@
         display: flex;
         width: 100%;
       }
-      
+
       .winner-frame-inner {
         margin: auto;
         padding: 24px;
@@ -206,7 +212,7 @@
                 <% end %>
               <% when "Player decision" %>
                 <% if d[:data][:last_chip] == 0 %>
-                  <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
+                  <%= "#{d[:data][:player]} decided to fold and is now out of the game. Remaining: $#{d[:data][:wallet]}" %>
                 <% else %>
                   <%= "#{d[:data][:player]} decided to #{d[:data][:decision]} with #{d[:data][:last_chip]}: Total #{d[:data][:chips_sum]}, Remaining: $#{d[:data][:wallet]}" %>
                   <div class="chips">
@@ -263,7 +269,7 @@
               <% end %>
             </div>
             <div class="actions">
-            <% player.actions.each do |action| %>
+            <% player.actions.reverse.each do |action| %>
                 <div class="action"><%= action %></div>
               <% end %>
               
