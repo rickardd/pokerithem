@@ -92,22 +92,12 @@ class Game
         @players.last.actions.length
     end
 
-    def current_round_data_hash player
-        data = {
-            current_bet: highest_bet_total,
-            opponents: @players.reject { |p| p.name == player.name }.map { |p| { chips: p.chips, actions: p.actions }.to_h },
-            cards_on_table: @table.hand.cards,
-            chips_total: chips_total,
-            number_of_completed_rounds: number_of_completed_rounds
-        }.to_h
-    end
-
     def ask_players_for_action 
         @players.each do |player|
             #Players how has folded will still be asked for the record. This could be a subject for refactoring. 
             is_out_of_game = player.out_of_game # saves the value before this round   
             snapshot = Snapshot.new(@players, @table, @played_rounds) #consider passing in self. 
-            successful_action = player.do_action current_round_data_hash(player), snapshot 
+            successful_action = player.do_action snapshot 
             
             # needs to check if this bet is higher than the previous highest bet if player is raising. 
             if is_out_of_game
@@ -462,6 +452,10 @@ class Snapshot
         @table.hand.cards
     end
 
+    def total_players
+        @players.count
+    end
+
     private
 
     def no_of_completed_rounds
@@ -493,34 +487,23 @@ class VirtualPlayer < Player
     # add_action("call") will default to the same chips as the first previous player that did not fold
     # add_action("raise", x) if fold, the value will default to zero anyway
     
-    def do_action data, snapshot
+    def do_action snapshot
         # HERE GOES YOUR ALGORITHM. 
-        
-        # Need to know 
-        # other players actions
-        # other players bets
-        # cards on the table
-        # how many rounds has it been. 
-        # number of chips on the table
-        
-        # Available attributes
-        # @hand
-        # @chips
-        # @actions
-        # I'm playe x of y. e.g I'm player 3 of 4 so I know how many after is to play. 
 
         puts
         puts "------VIRTUAL PLAYER DATA--------"
+        puts "v-player: NAME #{name}"
+        puts "v-player: CARDS #{cards}"
+        puts "v-player: REMAINING MONEY #{remaining_money}"
         puts "last_round_actions: #{snapshot.last_round_actions}"
         puts "total_biddings: #{snapshot.total_biddings}"
         puts "current_bet: #{snapshot.current_bet}"
-        puts "Table: CARDS: #{snapshot.cards_on_table}"
-        puts "v-player: CARDS #{cards}"
-        puts "v-player: REMAINING MONEY #{remaining_money}"
+        puts "total_players: #{snapshot.total_players}"
+        puts "Table: cards: #{snapshot.cards_on_table}"
         puts "----------------------------"
         puts
 
-        if data[:current_bet] > 50
+        if snapshot.current_bet > 50
             action = "call"
             puts "(#{name} is bailing cause current bet is above 50)"
             puts
