@@ -2,7 +2,7 @@ require_relative "validator.rb"
 require "pry"
 
 # 1. if only 2 players. If one folds the other player wins
-# 2. if more than 2 players. we have to ask remianing players for action before moving to flop-round
+# 2. if more than 2 players. we have to ask remaining players for action before moving to flop-round
 # 3. - Don't move to next round until no one is raising. 
 
 class Game 
@@ -106,8 +106,8 @@ class Game
         @players.each do |player|
             #Players how has folded will still be asked for the record. This could be a subject for refactoring. 
             is_out_of_game = player.out_of_game # saves the value before this round   
-
-            successful_action = player.do_action current_round_data_hash(player)
+            snapshot = Snapshot.new(@players, @table, @played_rounds) #consider passing in self. 
+            successful_action = player.do_action current_round_data_hash(player), snapshot 
             
             # needs to check if this bet is higher than the previous highest bet if player is raising. 
             if is_out_of_game
@@ -399,18 +399,9 @@ class Player
         action = "fold" if chip.between?(0, 9) # 10 has to be updated to previous players bet. 
         action = "call" if chip == 10
 
-        puts "--- final chip #{chip}"
-        puts "--- final action #{action}"
-        puts "--- final wallet #{@chips.wallet}"
-
         @chips.add_chip chip
 
         @actions <<  action
-
-
-        # if bid_greater_than_wallet
-        #     binding.pry
-        # end
 
         !bid_greater_than_wallet # Returns false if attempted bid was greater than the money left in the wallet, else true
     end
@@ -446,10 +437,50 @@ class Hand
     end
 end
 
+class Snapshot
+    def initialize players, table, played_rounds
+        @players = players
+        @table = table
+        @played_rounds = played_rounds
+    end
+
+    def last_round_actions
+        @players
+            .reject {|player| player.actions.count <= no_of_completed_rounds }
+            .map {|player| player.actions.last }
+    end
+    
+    def current_bet
+        @players.reject {|player| player.out_of_game }.last.chips.get.last
+    end
+    
+    def total_biddings
+        @players.map { |player| player.chips.get.sum }.sum
+    end
+
+    def cards_on_table
+        @table.hand.cards
+    end
+
+    private
+
+    def no_of_completed_rounds
+        @players.map {|player| player.actions.count }.min
+    end
+end
+
 module VirtualPlayerInterface
     def do_action
         raise "Not implemented"
     end  
+
+    def remaining_money
+        @chips.wallet
+    end
+    
+    def cards
+        @hand.cards
+    end
 end
 
 # should this be an interface or extend.. or both?
@@ -462,7 +493,7 @@ class VirtualPlayer < Player
     # add_action("call") will default to the same chips as the first previous player that did not fold
     # add_action("raise", x) if fold, the value will default to zero anyway
     
-    def do_action data
+    def do_action data, snapshot
         # HERE GOES YOUR ALGORITHM. 
         
         # Need to know 
@@ -478,12 +509,16 @@ class VirtualPlayer < Player
         # @actions
         # I'm playe x of y. e.g I'm player 3 of 4 so I know how many after is to play. 
 
-        # puts "VP: current_bet " + data[:current_bet].to_s
-        # data[:oponents].each_with_index { |o, i| puts "Oponent: #{i} #{o[:chips].get}" }
-        # puts "VP: cards_on_table " + data[:cards_on_table].to_s
-        # puts "VP: chips_total " + data[:chips_total].to_s
-        # puts "VP: chips_in_pool " + data[:chips_in_pool].to_s
-        # puts "VP: number_of_completed_rounds " + data[:number_of_completed_rounds].to_s
+        puts
+        puts "------VIRTUAL PLAYER DATA--------"
+        puts "last_round_actions: #{snapshot.last_round_actions}"
+        puts "total_biddings: #{snapshot.total_biddings}"
+        puts "current_bet: #{snapshot.current_bet}"
+        puts "Table: CARDS: #{snapshot.cards_on_table}"
+        puts "v-player: CARDS #{cards}"
+        puts "v-player: REMAINING MONEY #{remaining_money}"
+        puts "----------------------------"
+        puts
 
         if data[:current_bet] > 50
             action = "call"
