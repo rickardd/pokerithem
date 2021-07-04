@@ -10,6 +10,7 @@ require_relative "snapshot.rb"
 require_relative "../players/rob.rb" 
 require_relative "../players/kriszta.rb" 
 require_relative "../players/frank.rb" 
+require_relative "../players/eleanor.rb" 
 
 
 # 1. if only 2 players. If one folds the other player wins
@@ -43,6 +44,7 @@ class Game
         add_player Rob.new
         add_player Kriszta.new
         add_player Frank.new
+        add_player Eleanor.new
     end
     
     def add_player player
