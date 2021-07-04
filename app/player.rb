@@ -1,3 +1,6 @@
+require_relative "chipSet.rb"
+require_relative "hand.rb"
+
 class Player
     attr_accessor :out_of_game
     attr_reader :name, :score, :hand, :chips, :actions

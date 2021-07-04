@@ -1,3 +1,6 @@
+require_relative "chipSet.rb"
+require_relative "hand.rb"
+
 class Table 
     attr_reader :hand
 
