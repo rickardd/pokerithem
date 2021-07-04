@@ -32,6 +32,16 @@
         align-items: center;
       }
 
+      .block-highlight:after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -24px;
+        height: 4px;
+        background: #ffb100;
+      }
+
       .block-table {
         flex-basis: 100%;
         justify-content: center;
@@ -254,7 +264,7 @@
           </div>
         </article>
         <% result[:players].each do |player| %>
-          <article class="block">
+          <article class="block <%= 'block-highlight' if result[:winner][:name] === player.name %>">
             <h2 class="lable"><%= player.name %></h2>
             <div class="cards">
               <% player.hand.get.each do |card| %>
