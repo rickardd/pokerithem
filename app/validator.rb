@@ -16,7 +16,7 @@ class Validator
     FOUR_OF_A_KING_NAME = "four of a king"
     FULL_HOUSE_NAME = "full house"
     FLUSH_NAME = "flush"
-    STRIGHT_NAME = "straight"
+    STRAIGHT_NAME = "straight"
     THREE_OF_A_KIND_NAME = "three of a kind"
     TWO_PAIR_NAME = "two pair"
     ONE_PAIR_NAME = "one pair"
@@ -34,6 +34,10 @@ class Validator
         def colors
             @cards.map { |card| card[1] } 
         end
+
+        def quantity
+            @cards.length
+        end
         
         def raw
             @cards
@@ -47,7 +51,7 @@ class Validator
         return { name: FOUR_OF_A_KING_NAME, value: four_of_a_king, sum: sum }.to_h if four_of_a_king?
         return { name: FULL_HOUSE_NAME, value: full_house, sum: sum }.to_h if full_house?
         return { name: FLUSH_NAME, value: flush, sum: sum }.to_h if flush?
-        return { name: STRIGHT_NAME, value: straight, sum: sum }.to_h if straight?
+        return { name: STRAIGHT_NAME, value: straight, sum: sum }.to_h if straight?
         return { name: THREE_OF_A_KIND_NAME, value: three_of_a_kind, sum: sum }.to_h if three_of_a_kind?
         return { name: TWO_PAIR_NAME, value: two_pair, sum: sum }.to_h if two_pair?
         return { name: ONE_PAIR_NAME, value: one_pair, sum: sum }.to_h if one_pair?
@@ -87,7 +91,7 @@ class Validator
     end
     
     def flush
-        FLUSH_VALUE if @cards.colors.uniq.length == 1
+        FLUSH_VALUE if @cards.colors.uniq.length == 1 && @cards.quantity == 5
     end
     
     def straight
