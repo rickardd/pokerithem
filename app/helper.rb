@@ -4,5 +4,9 @@ class Helper
         value = card[0]
         "/cards/#{value}#{suit}.png"
     end
+
+    def self.opponents players, player
+        players.reject {|p| p.name == player.name }
+    end
     
 end

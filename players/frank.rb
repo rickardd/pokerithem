@@ -1,12 +1,12 @@
 require_relative "../app/player.rb" 
 require_relative "../app/virtual_player_interface.rb"
 
-class Rob < Player
+class Frank < Player
     # write rspec test to ensure this is correctly implemented. 
     include VirtualPlayerInterface
 
     def initialize
-        super("Rob") 
+        super("Frank") 
     end
    
     # Write an algorith which finally will call the method add_action(action, chip) e.g
@@ -30,13 +30,7 @@ class Rob < Player
         puts "----------------------------"
         puts
 
-        if !snapshot.current_bet.nil? && snapshot.current_bet > 50
-            action = "call"
-            puts "(#{name} is bailing cause current bet is above 50)"
-            puts
-        else
-            action = ["fold", "call", "raise"].shuffle.first
-        end
+        action = ["fold", "call", "raise"].shuffle.first
 
         if action == "raise"
             add_action action, 20 # algorithm decision

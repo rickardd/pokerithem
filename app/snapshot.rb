@@ -1,8 +1,11 @@
+# require_relative "helper.rb"
+
 class Snapshot
-    def initialize players, table, played_rounds
+    def initialize players, current_player, table, played_rounds
         @players = players
         @table = table
         @played_rounds = played_rounds
+        @current_player = current_player
     end
 
     def last_round_actions
@@ -12,7 +15,12 @@ class Snapshot
     end
     
     def current_bet
-        @players.reject {|player| player.out_of_game }.last.chips.get.last
+        opponents = Helper.opponents @players, @current_player
+        remaining_opponents = opponents.reject {|player| player.out_of_game }
+
+        if remaining_opponents.last
+            remaining_opponents.last.chips.get.last
+        end
     end
     
     def total_biddings

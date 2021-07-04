@@ -9,6 +9,7 @@ require_relative "snapshot.rb"
 
 require_relative "../players/rob.rb" 
 require_relative "../players/kriszta.rb" 
+require_relative "../players/frank.rb" 
 
 
 # 1. if only 2 players. If one folds the other player wins
@@ -41,6 +42,7 @@ class Game
     def add_players 
         add_player Rob.new
         add_player Kriszta.new
+        add_player Frank.new
     end
     
     def add_player player
@@ -111,10 +113,11 @@ class Game
 
     def ask_players_for_action 
         @players.each do |player|
+            snapshot = Snapshot.new(@players, player, @table, @played_rounds) #consider passing in self. 
+            successful_action = player.do_action snapshot 
+            
             #Players how has folded will still be asked for the record. This could be a subject for refactoring. 
             is_out_of_game = player.out_of_game # saves the value before this round   
-            snapshot = Snapshot.new(@players, @table, @played_rounds) #consider passing in self. 
-            successful_action = player.do_action snapshot 
             
             # needs to check if this bet is higher than the previous highest bet if player is raising. 
             if is_out_of_game
