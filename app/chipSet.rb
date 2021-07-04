@@ -3,7 +3,7 @@ class ChipSet
 
     def initialize
         @chips = []
-        @wallet = 52
+        @wallet = 102
     end
 
     def add_chip number

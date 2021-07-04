@@ -30,13 +30,13 @@ class Rob < Player
         puts "----------------------------"
         puts
 
-        if !snapshot.current_bet.nil? && snapshot.current_bet > 50
-            action = "call"
-            puts "(#{name} is bailing cause current bet is above 50)"
-            puts
-        else
-            action = ["fold", "call", "raise"].shuffle.first
-        end
+        # if !snapshot.current_bet.nil? && snapshot.current_bet > 50
+        #     action = "call"
+        #     puts "(#{name} is bailing cause current bet is above 50)"
+        #     puts
+        # else
+            action = ["fold", "call", "call", "call", "call",  "call",  "call", "raise", "raise", "raise"].shuffle.first
+        # end
 
         if action == "raise"
             add_action action, 20 # algorithm decision

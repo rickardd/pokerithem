@@ -30,7 +30,7 @@ class Frank < Player
         puts "----------------------------"
         puts
 
-        action = ["fold", "call", "raise"].shuffle.first
+        action = ["fold", "call", "call", "call", "call",  "call",  "call", "raise", "raise", "raise"].shuffle.first
 
         if action == "raise"
             add_action action, 20 # algorithm decision
