@@ -10,6 +10,17 @@ get '/' do
     data = game.get_json
     result = game.result
 
-    erb :index, locals: { data: data, result: result, helper: Helper.new }
+    # session[:session_winners] = ["Kriszta", "Kriszta", "Rob", "Kriszta"]
+    session[:session_winners] = [] if !session[:session_winners]
+    session[:session_winners] << result[:winner][:name]
+
+    session_winners = session[:session_winners].uniq.map do |name| 
+        { 
+            name: name, 
+            count: session[:session_winners].select {|n| n == name }.length 
+        }.to_h 
+    end
+    
+    erb :index, locals: { data: data, result: result, helper: Helper.new, session_winners: session_winners }
       
 end
