@@ -56,7 +56,7 @@ class Player
     end
     
     def cards
-        @hand.cards
+        @hand.get
     end
     
 end

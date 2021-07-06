@@ -35,6 +35,10 @@ class Snapshot
         @players.count
     end
 
+    def current_round
+        @played_rounds.current
+    end
+
     private
 
     def no_of_completed_rounds
