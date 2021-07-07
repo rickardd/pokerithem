@@ -7,6 +7,7 @@ class Kriszta < Player
 
     def initialize
         super("Kriszta") 
+        @round_counter = 0
     end
    
     # Write an algorithm which finally will call the method add_action(action, chip) e.g
@@ -29,13 +30,17 @@ class Kriszta < Player
         puts "----------------------------"
         puts
 
-        action = ["fold", "call", "call", "call", "call",  "call",  "call", "raise", "raise", "raise"].shuffle.first
+        if snapshot.cards_on_table.any?
+            @all_cards = snapshot.cards_on_table[0] + cards
+        end
 
         # Maybe this should be part of the Player class
         pre_flop snapshot if snapshot.current_round == "pre flop"
         flop snapshot if snapshot.current_round == "flop"
         turn snapshot if snapshot.current_round == "turn"
         river snapshot if snapshot.current_round == "river"
+
+        @round_counter += 1
     end
 
     def pre_flop snapshot
@@ -45,21 +50,31 @@ class Kriszta < Player
         # if the values are the same. This could be a full house, Pair, Two Pair or Three of a kind
         # if sum is greater than 10 * 5 = 50. Could win with high cards.
     
-        if card_gap(cards) <= 5 || one_suit?(cards) || same_numbers?(cards) || sum(cards) >= 50 
+        if ( card_gap(cards) <= 5 || one_suit?(cards) || same_numbers?(cards) ) && @round_counter < 1
             add_action("raise", 20)
+        elsif sum(cards) >= 15 
+            add_action("call")
+        else
+            add_action("fold")
         end
     end
 
     def flop snapshot
-        add_action("raise", 20)
+        if one_suit?(@all_cards) || same_numbers?(@all_cards)
+            add_action("raise", 20)
+        elsif sum(@all_cards) >= 50
+            add_action("call")
+        else
+            add_action("fold")
+        end
     end
 
     def turn snapshot
-        add_action("call", 20)
+        add_action("call")
     end
 
     def river snapshot
-        add_action("call", 20) 
+        add_action("call") 
     end
 
 
@@ -78,6 +93,8 @@ class Kriszta < Player
     end
     
     def card_gap cards
+        # needs to test with both ais as 1 and 14. 
+        # Needs to test combinations if cards are more then 5. 
         numbers(cards).max - numbers(cards).min
     end
     
@@ -90,7 +107,7 @@ class Kriszta < Player
     end
     
     def sum cards
-        numbers(cards).sum
+        numbers(cards).map{|number|  number == 1 ? 14 : number }.sum
     end
 
 end
